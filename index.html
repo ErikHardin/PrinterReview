@@ -455,7 +455,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
       <div class="search-inner">
         <span class="si">🔍</span>
         <input class="search-input" id="globalSearch" type="text"
-          placeholder="Search D#, B#, model, room, dept…"
+          placeholder="Search D#, B#, S/N, model, room, dept…"
           autocomplete="off" autocorrect="off" spellcheck="false"
           oninput="onSearch(this.value)">
         <button class="sx" id="searchX" onclick="clearSearch()">✕</button>
@@ -751,7 +751,7 @@ const fmtFloor = f => String(f||'').replace(/^floor\s*/i,'').trim();
 const blds = () => [...new Set(printers.map(p=>p.building))].sort();
 const fls  = b  => [...new Set(printers.filter(p=>b==='All'||p.building===b).map(p=>p.floor))].sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true}));
 
-function match(p,q){if(!q)return true;const s=q.toLowerCase();return[p.dnumber,p.bnumber,p.model,p.room,p.dept,p.institute].some(v=>String(v||'').toLowerCase().includes(s));}
+function match(p,q){if(!q)return true;const s=q.toLowerCase();return[p.dnumber,p.bnumber,p.model,p.room,p.dept,p.institute,p.serial].some(v=>String(v||'').toLowerCase().includes(s));}
 
 function filtered() {
   return printers.filter(p => {

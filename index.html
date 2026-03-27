@@ -559,7 +559,7 @@ let printers = [];
 // allDecisions = { printerId: { reviewerKey: { status, replacementId, reviewer, ts } } }
 let allDecisions = {};
 let myName = '', myKey = '';
-let curBld = 'All', curFlr = 'All', searchQ = '';
+let curBld = 'All', curFlr = 'All', searchQ = '', statusFilter = 'all';
 let showConflictsOnly = false;
 let activeId = null, pendingDec = null, selReplId = null, securePrint = false;
 let db = null;
@@ -727,6 +727,16 @@ function filtered() {
     if (curFlr !== 'All' && String(p.floor) !== String(curFlr)) return false;
     if (!match(p, searchQ)) return false;
     if (showConflictsOnly && !hasConflict(p.id)) return false;
+    // Status filter
+    if (statusFilter !== 'all') {
+      const decs = getDecisionsFor(p.id);
+      const disp = getDisplayDecision(p.id);
+      if (statusFilter === 'pending'   && decs.length > 0)       return false;
+      if (statusFilter === 'keep'      && disp !== 'keep')        return false;
+      if (statusFilter === 'retire'    && disp !== 'retire')      return false;
+      if (statusFilter === 'notfound'  && disp !== 'notfound')    return false;
+      if (statusFilter === 'conflict'  && disp !== 'conflict')    return false;
+    }
     return true;
   }).sort((a,b)=>String(a.room).localeCompare(String(b.room),undefined,{numeric:true}));
 }

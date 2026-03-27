@@ -34,6 +34,15 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .pin-dot.on{background:var(--accent);border-color:var(--accent);transform:scale(1.1)}
 .pin-dot.err{background:var(--retire);border-color:var(--retire);animation:shk .4s ease}
 @keyframes shk{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+@keyframes swipeKeep{0%{transform:translateX(0);background:var(--surface)}50%{transform:translateX(60px);background:var(--keep-bg)}100%{transform:translateX(0);background:var(--keep-bg)}}
+.prow.swipe-animate{animation:swipeKeep .35s ease forwards}
+.floor-celebration{display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.85);align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:32px}
+.floor-celebration.show{display:flex;animation:fadeIn .3s ease}
+.celeb-emoji{font-size:72px;margin-bottom:16px;animation:bounce 1s ease infinite alternate}
+.celeb-title{font-size:26px;font-weight:700;color:var(--keep);margin-bottom:8px}
+.celeb-sub{font-size:15px;color:var(--text2);margin-bottom:28px}
+.celeb-btn{padding:14px 32px;border-radius:12px;border:none;background:var(--keep);color:#fff;font-family:'Sora',sans-serif;font-size:16px;font-weight:700;cursor:pointer}
+@keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-20px)}}
 .pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:100%;max-width:260px}
 .pin-key{aspect-ratio:1;border-radius:50%;border:1px solid var(--border2);background:var(--surface);font-family:'Sora',sans-serif;font-size:22px;font-weight:600;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .1s;user-select:none;-webkit-user-select:none}
 .pin-key:active{background:var(--surface3);transform:scale(.91)}
@@ -153,6 +162,8 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .list{padding:8px 12px 80px;display:flex;flex-direction:column;gap:6px}
 .prow{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;cursor:pointer;transition:all .15s;user-select:none;-webkit-user-select:none}
 .prow:active{opacity:.85;transform:scale(.985)}
+.prow-swipe-hint{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:22px;opacity:0;pointer-events:none;transition:opacity .15s}
+.prow{position:relative;overflow:hidden;touch-action:pan-y}
 .prow.dk{background:var(--keep-bg);border-color:var(--keep-border)}
 .prow.dr{background:var(--retire-bg);border-color:var(--retire-border)}
 .prow.dnf{background:var(--notfound-bg);border-color:var(--notfound-border)}
@@ -534,6 +545,12 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
     </div>
   </div>
 
+<div class="floor-celebration" id="floorCelebration">
+  <div class="celeb-emoji">🎉</div>
+  <div class="celeb-title" id="celebTitle">Floor Complete!</div>
+  <div class="celeb-sub" id="celebSub">All printers on this floor have been reviewed.</div>
+  <button class="celeb-btn" onclick="closeCelebration()">Continue →</button>
+</div>
 </div><!-- /appRoot -->
 
 <script>
@@ -623,6 +640,7 @@ function startApp(fbUrl) {
     db.ref('.info/connected').on('value', snap => {
       const connected = snap.val();
       setSyncStatus(connected ? 'live' : 'off');
+      if (connected) flushOfflineQueue();
     });
     loadPrinters();
   } catch(e) {
@@ -900,6 +918,7 @@ function renderList(){
       rev=`<div class="prow-reviewers">👤 ${allDecs.map(d=>d.reviewer).join(', ')}</div>`;
     }
     row.innerHTML=`<div class="prow-top"><div class="prow-main"><div class="prow-ids">${p.dnumber} · ${p.bnumber}</div>${p.serial?`<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:.03em;margin-bottom:2px">S/N: ${p.serial}</div>`:''}<div class="prow-model">${p.model}</div><div class="prow-loc">${[p.dept,p.room?'Rm '+p.room:''].filter(Boolean).join(' · ')}</div>${rn}${rev}</div><span class="sbadge ${bc}">${bt}</span></div><div class="prow-meta"><span>Fl ${fmtFloor(p.floor)}</span><span class="${hi(p.avgPages)?'mw':''}">📄 ${fmt(p.avgPages)}/mo${hi(p.avgPages)?' ⚠️':''}</span>${p.epic>0?'<span class="epic-yes">EPIC '+p.epic+'</span>':''}${p.leaseEnd&&p.leaseEnd!=='N/A'&&p.leaseEnd!==''?'<span style="color:'+leaseColor(p.leaseEnd)+';font-weight:600">📋 Lease: '+fmtLeaseDate(p.leaseEnd)+'</span>':''}</div>`;
+    addSwipeToKeep(row, p.id);
     list.appendChild(row);
   });
   if(more>0){const note=document.createElement('div');note.className='empty-state';note.style.padding='16px';note.innerHTML=`<div style="font-size:13px;color:var(--text3)">+${more.toLocaleString()} more — use filters or search to narrow down.</div>`;list.appendChild(note);}
@@ -1038,9 +1057,20 @@ function saveDec(){
   // Write to Firebase: decisions/{dnumber}/{myKey}
   const p=printers.find(x=>x.id===activeId);
   const fireKey=p?dkey(p.dnumber):String(activeId);
+  // Write to Firebase with offline fallback
   db.ref('decisions/'+fireKey+'/'+myKey).set(dec)
-    .then(()=>{closeModal();})
-    .catch(e=>alert('Save failed: '+e.message));
+    .then(()=>{closeModal();checkFloorComplete();})
+    .catch(()=>{
+      // Offline - queue locally and update UI optimistically
+      offlineQueue.push({path:'decisions/'+fireKey+'/'+myKey, data:dec});
+      // Update allDecisions locally so UI reflects the change
+      if(!allDecisions[fireKey]) allDecisions[fireKey]={};
+      allDecisions[fireKey][myKey]=dec;
+      setSyncStatus('off');
+      closeModal();
+      checkFloorComplete();
+      renderAll();
+    });
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1294,6 +1324,96 @@ function leaseColor(val) {
   if (days <= 90)  return 'var(--retire)';   // within 90 days - red
   if (days <= 180) return 'var(--warn)';     // within 180 days - orange
   return '';                                  // beyond 180 days - normal
+}
+
+// ── SWIPE TO KEEP ─────────────────────────────────────────────────────────────
+function addSwipeToKeep(row, printerId) {
+  var startX = 0, startY = 0, dragging = false;
+  row.addEventListener('touchstart', function(e) {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    dragging = false;
+  }, {passive:true});
+  row.addEventListener('touchmove', function(e) {
+    var dx = e.touches[0].clientX - startX;
+    var dy = e.touches[0].clientY - startY;
+    if (Math.abs(dx) > Math.abs(dy) && dx > 10) {
+      dragging = true;
+      var pct = Math.min(dx / 120, 1);
+      row.style.transform = 'translateX(' + (dx * 0.4) + 'px)';
+      row.style.background = 'rgba(52,201,122,' + (pct * 0.3) + ')';
+    }
+  }, {passive:true});
+  row.addEventListener('touchend', function(e) {
+    var dx = e.changedTouches[0].clientX - startX;
+    row.style.transform = '';
+    row.style.background = '';
+    if (dragging && dx > 80) {
+      // Swipe right confirmed - keep it
+      quickKeep(printerId, row);
+    }
+    dragging = false;
+  }, {passive:true});
+}
+
+function quickKeep(printerId, row) {
+  var p = printers.find(function(x){ return x.id===printerId; });
+  if (!p) return;
+  // Animate the row
+  row.classList.add('swipe-animate');
+  setTimeout(function(){ row.classList.remove('swipe-animate'); }, 400);
+  var dec = {status:'keep', replacementId:null, securePrint:false, reviewer:myName, ts:Date.now()};
+  var fireKey = dkey(p.dnumber);
+  db.ref('decisions/'+fireKey+'/'+myKey).set(dec)
+    .then(function(){
+      renderAll();
+      checkFloorComplete();
+    })
+    .catch(function(e){ alert('Save failed: '+e.message); });
+}
+
+// ── FLOOR CELEBRATION ─────────────────────────────────────────────────────────
+var lastCelebratedFloor = '';
+
+function checkFloorComplete() {
+  if (curBld === 'All' || !printers.length) return;
+  var floorKey = curBld + '|' + curFlr;
+  if (floorKey === lastCelebratedFloor) return;
+  var vis = filtered();
+  if (!vis.length) return;
+  var allDone = vis.every(function(p){
+    var decs = getDecisionsFor(p.id);
+    return decs.length > 0;
+  });
+  if (allDone) {
+    lastCelebratedFloor = floorKey;
+    var flLabel = curFlr === 'All' ? curBld : 'Floor ' + fmtFloor(curFlr) + ' of ' + curBld;
+    document.getElementById('celebTitle').textContent = '🎉 ' + flLabel + ' Complete!';
+    document.getElementById('celebSub').textContent = 'All ' + vis.length + ' printers on this floor have been reviewed. Great work!';
+    document.getElementById('floorCelebration').classList.add('show');
+  }
+}
+
+function closeCelebration() {
+  document.getElementById('floorCelebration').classList.remove('show');
+}
+
+// ── OFFLINE SUPPORT ───────────────────────────────────────────────────────────
+var offlineQueue = [];
+
+function flushOfflineQueue() {
+  if (!offlineQueue.length) return;
+  var queue = offlineQueue.slice();
+  offlineQueue = [];
+  queue.forEach(function(item){
+    db.ref(item.path).set(item.data).catch(function(){
+      offlineQueue.push(item); // re-queue if still failing
+    });
+  });
+  if (queue.length) {
+    setSyncStatus('live');
+    renderAll();
+  }
 }
 
 // ══════════════════════════════════════════════════════════

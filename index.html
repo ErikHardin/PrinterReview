@@ -18,6 +18,7 @@
   --keep:#34C97A;--keep-bg:#0D2E1E;--keep-border:#1A5C3A;
   --retire:#FF5B5B;--retire-bg:#2A1111;--retire-border:#5C2020;
   --warn:#F5A623;
+  --notfound:#9B9890;--notfound-bg:#1E2333;--notfound-border:#333B55;
   --conflict:#C97BFF;--conflict-bg:#1A0D2E;--conflict-border:#5C1A8A;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -129,6 +130,8 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .bld-select option{background:var(--surface2);color:var(--text)}
 .bld-arrow{position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:12px;color:var(--text2)}
 .flabel{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
+.status-filter-row{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.status-filter-row::-webkit-scrollbar{display:none}
 .frow{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .frow::-webkit-scrollbar{display:none}
 .chip{flex-shrink:0;padding:5px 12px;border-radius:7px;border:1px solid var(--border2);background:transparent;font-family:'Sora',sans-serif;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .15s;white-space:nowrap}
@@ -152,6 +155,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .prow:active{opacity:.85;transform:scale(.985)}
 .prow.dk{background:var(--keep-bg);border-color:var(--keep-border)}
 .prow.dr{background:var(--retire-bg);border-color:var(--retire-border)}
+.prow.dnf{background:var(--notfound-bg);border-color:var(--notfound-border)}
 .prow.dc{background:var(--conflict-bg);border-color:var(--conflict-border)}
 .prow-top{display:flex;align-items:flex-start;gap:9px}
 .prow-main{flex:1;min-width:0}
@@ -165,10 +169,12 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .sb-p{background:var(--surface3);color:var(--text3);border:1px dashed var(--border2)}
 .sb-k{background:var(--keep-bg);color:var(--keep);border:1px solid var(--keep-border)}
 .sb-r{background:var(--retire-bg);color:var(--retire);border:1px solid var(--retire-border)}
+.sb-nf{background:var(--notfound-bg);color:var(--notfound);border:1px solid var(--notfound-border)}
 .sb-c{background:var(--conflict-bg);color:var(--conflict);border:1px solid var(--conflict-border)}
 .prow-meta{margin-top:7px;padding-top:7px;border-top:1px solid var(--border);display:flex;gap:12px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3)}
 .prow.dk .prow-meta{border-color:var(--keep-border)}
 .prow.dr .prow-meta{border-color:var(--retire-border)}
+.prow.dnf .prow-meta{border-color:var(--notfound-border)}
 .prow.dc .prow-meta{border-color:var(--conflict-border)}
 .mw{color:var(--warn);font-weight:600}
 .epic-yes{color:var(--accent);font-weight:700}
@@ -206,7 +212,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .conflict-row:last-child{border-bottom:none}
 .conflict-reviewer{font-size:12px;font-weight:600;color:var(--text2);flex:1}
 .conflict-dec{font-size:12px;font-weight:700}
-.conflict-dec.k{color:var(--keep)}.conflict-dec.r{color:var(--retire)}
+.conflict-dec.k{color:var(--keep)}.conflict-dec.r{color:var(--retire)}.conflict-dec.nf{color:var(--notfound)}
 .conflict-repl{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:1px}
 
 .msec{padding:13px 18px 7px;font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.07em;text-transform:uppercase}
@@ -215,6 +221,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .dec-btn .di{font-size:22px}
 .dec-btn.sk{background:var(--keep-bg);border-color:var(--keep);color:var(--keep)}
 .dec-btn.sr{background:var(--retire-bg);border-color:var(--retire);color:var(--retire)}
+.dec-btn.snf{background:var(--surface3);border-color:var(--text3);color:var(--text)}
 .dec-btn:active{transform:scale(.96)}
 .repl-sec{padding:11px 18px 0;display:none}
 .repl-sec.show{display:block}
@@ -250,6 +257,29 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .btn-save:disabled{opacity:.25}
 .btn-save:not(:disabled):active{opacity:.8}
 .empty-state{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px}
+.summary-screen{display:none;padding:12px;padding-bottom:60px}
+.summary-screen.open{display:block}
+.summary-bld{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden}
+.summary-bld-hdr{padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+.summary-bld-name{font-size:14px;font-weight:700;flex:1}
+.summary-bld-pct{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2)}
+.summary-bld-arrow{font-size:12px;color:var(--text3);transition:transform .2s}
+.summary-bld-arrow.open{transform:rotate(180deg)}
+.summary-bld-bar{height:3px;background:var(--surface3);margin:0 14px 10px}
+.summary-bld-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}
+.summary-floors{display:none;border-top:1px solid var(--border)}
+.summary-floors.open{display:block}
+.summary-floor{padding:8px 14px 8px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.summary-floor:last-child{border-bottom:none}
+.summary-floor-name{font-size:13px;font-weight:600;flex:1}
+.summary-floor-stats{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.stat-pill{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px}
+.sp-keep{background:var(--keep-bg);color:var(--keep);border:1px solid var(--keep-border)}
+.sp-retire{background:var(--retire-bg);color:var(--retire);border:1px solid var(--retire-border)}
+.sp-nf{background:var(--notfound-bg);color:var(--notfound);border:1px solid var(--notfound-border)}
+.sp-pending{background:var(--surface3);color:var(--text3);border:1px dashed var(--border2)}
+.sp-conflict{background:var(--conflict-bg);color:var(--conflict);border:1px solid var(--conflict-border)}
+.summary-floor-pct{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);margin-left:4px}
 .empty-icon{font-size:36px;margin-bottom:10px}
 </style>
 </head>
@@ -380,6 +410,17 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
         <div class="flabel">Floor</div>
         <div class="frow" id="flrBar"></div>
       </div>
+      <div>
+        <div class="flabel" style="margin-top:8px">Status</div>
+        <div class="status-filter-row">
+          <button class="chip" id="sf-all"      onclick="setStatusFilter('all')">All</button>
+          <button class="chip" id="sf-pending"  onclick="setStatusFilter('pending')">⏳ Pending</button>
+          <button class="chip" id="sf-keep"     onclick="setStatusFilter('keep')">✓ Keep</button>
+          <button class="chip" id="sf-retire"   onclick="setStatusFilter('retire')">✗ Retire</button>
+          <button class="chip" id="sf-notfound" onclick="setStatusFilter('notfound')">? Not Found</button>
+          <button class="chip" id="sf-conflict" onclick="setStatusFilter('conflict')">⚠ Conflict</button>
+        </div>
+      </div>
     </div>
 
     <div class="search-wrap">
@@ -393,6 +434,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
       </div>
     </div>
 
+    <div class="summary-screen" id="summaryScreen"></div>
     <div class="list" id="printerList"></div>
 
   </div><!-- /mainApp -->
@@ -407,8 +449,9 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
           <button class="btn-save" id="btnSave" onclick="saveDec()" disabled style="flex:1">Save Decision</button>
         </div>
         <div class="dec-btns" style="width:100%;margin-top:8px">
-          <button class="dec-btn" id="btnKeep"   onclick="selDec('keep')"><span class="di">✅</span>Keep It</button>
-          <button class="dec-btn" id="btnRetire" onclick="selDec('retire')"><span class="di">🗑️</span>Retire It</button>
+          <button class="dec-btn" id="btnKeep"    onclick="selDec('keep')"><span class="di">✅</span>Keep It</button>
+          <button class="dec-btn" id="btnRetire"  onclick="selDec('retire')"><span class="di">🗑️</span>Retire It</button>
+          <button class="dec-btn" id="btnNotFound" onclick="selDec('notfound')" style="grid-column:1/-1;padding:10px"><span class="di" style="font-size:18px">🔍</span>Not Found</button>
         </div>
       </div>
       <div class="modal-scroll">
@@ -642,7 +685,7 @@ function getDisplayDecision(printerId) {
   const decs = getDecisionsFor(printerId);
   if (!decs.length) return null;
   if (hasConflict(printerId)) return 'conflict';
-  return decs[0].status;
+  return decs[0].status; // 'keep', 'retire', or 'notfound'
 }
 
 // ══════════════════════════════════════════════════════════
@@ -793,11 +836,13 @@ function renderList(){
     if(isConflict)rowClass+=' dc';
     else if(displayDec==='keep')rowClass+=' dk';
     else if(displayDec==='retire')rowClass+=' dr';
+    else if(displayDec==='notfound')rowClass+=' dnf';
     row.className=rowClass;row.onclick=()=>openModal(p.id);
     let bc='sb-p',bt='Pending';
     if(isConflict){bc='sb-c';bt='⚠ Conflict';}
     else if(displayDec==='keep'){bc='sb-k';bt='✓ Keep';}
     else if(displayDec==='retire'){bc='sb-r';bt='✗ Retire';}
+    else if(displayDec==='notfound'){bc='sb-nf';bt='? Not Found';}
     // Show replacement if unanimous retire
     let rn='';
     if(displayDec==='retire'&&!isConflict&&allDecs.length){
@@ -821,6 +866,27 @@ function renderAll(){renderFlrBar();renderList();updateProgress();}
 // ══════════════════════════════════════════════════════════
 //  SEARCH
 // ══════════════════════════════════════════════════════════
+function setStatusFilter(val){
+  statusFilter=val;
+  // Update chip active states
+  ['all','pending','keep','retire','notfound','conflict'].forEach(s=>{
+    const btn=document.getElementById('sf-'+s);
+    if(!btn)return;
+    btn.className='chip'+(val===s?' af':'');
+    // Special colors for status chips when active
+    if(val===s){
+      if(s==='pending')btn.style.cssText='background:var(--surface3);border-color:var(--border2);color:var(--text)';
+      else if(s==='keep')btn.style.cssText='background:var(--keep-bg);border-color:var(--keep-border);color:var(--keep)';
+      else if(s==='retire')btn.style.cssText='background:var(--retire-bg);border-color:var(--retire-border);color:var(--retire)';
+      else if(s==='notfound')btn.style.cssText='background:var(--surface3);border-color:var(--border2);color:var(--text2)';
+      else if(s==='conflict')btn.style.cssText='background:var(--conflict-bg);border-color:var(--conflict-border);color:var(--conflict)';
+      else btn.style.cssText='';
+    } else {
+      btn.style.cssText='';
+    }
+  });
+  renderList();updateProgress();
+}
 function onSearch(v){searchQ=v.trim();document.getElementById('searchX').classList.toggle('show',searchQ.length>0);renderList();updateProgress();}
 function clearSearch(){document.getElementById('globalSearch').value='';onSearch('');}
 
@@ -855,7 +921,9 @@ function openModal(id){
     document.getElementById('conflictRows').innerHTML=allDecs.map(d=>{
       const rp=d.replacementId?printers.find(x=>x.dnumber===d.replacementId):null;
       const rl=d.securePrint?'🔒 Secure Print':rp?rp.dnumber:'';
-      return `<div class="conflict-row"><span class="conflict-reviewer">${d.reviewer}</span><span class="conflict-dec ${d.status==='keep'?'k':'r'}">${d.status==='keep'?'✓ Keep':'✗ Retire'}</span>${rl?`<span class="conflict-repl">${rl}</span>`:''}</div>`;
+      const decLabel=d.status==='keep'?'✓ Keep':d.status==='retire'?'✗ Retire':'? Not Found';
+      const decCls=d.status==='keep'?'k':d.status==='retire'?'r':'nf';
+      return `<div class="conflict-row"><span class="conflict-reviewer">${d.reviewer}</span><span class="conflict-dec ${decCls}">${decLabel}</span>${rl?`<span class="conflict-repl">${rl}</span>`:''}</div>`;
     }).join('');
   } else {cp.style.display='none';}
 
@@ -873,8 +941,8 @@ function openModal(id){
 
 }
 function closeModal(){document.getElementById('overlay').classList.remove('open');document.body.style.overflow='';activeId=null;pendingDec=null;selReplId=null;_scrollListenerAdded=false;const ms=document.querySelector('.modal-scroll');if(ms)ms.scrollTop=0;}
-function selDec(v){pendingDec=v;if(v==='keep'){selReplId=null;securePrint=false;}document.getElementById('securePrintWrap').classList.toggle('show',v==='retire');document.getElementById('secureCheck').classList.toggle('checked',securePrint);document.getElementById('secureCheckBox').textContent=securePrint?'\u2713':'';document.getElementById('replSec').classList.toggle('show',v==='retire'&&!securePrint);if(v==='retire'&&!securePrint)renderPicker('');refreshSelRepl();refreshDecBtns();}
-function refreshDecBtns(){document.getElementById('btnKeep').className='dec-btn'+(pendingDec==='keep'?' sk':'');document.getElementById('btnRetire').className='dec-btn'+(pendingDec==='retire'?' sr':'');const ok=pendingDec==='keep'||(pendingDec==='retire'&&(securePrint||selReplId));document.getElementById('btnSave').disabled=!ok;}
+function selDec(v){pendingDec=v;if(v==='keep'||v==='notfound'){selReplId=null;securePrint=false;}document.getElementById('securePrintWrap').classList.toggle('show',v==='retire');document.getElementById('secureCheck').classList.toggle('checked',securePrint);document.getElementById('secureCheckBox').textContent=securePrint?'\u2713':'';document.getElementById('replSec').classList.toggle('show',v==='retire'&&!securePrint);if(v==='retire'&&!securePrint)renderPicker('');refreshSelRepl();refreshDecBtns();}
+function refreshDecBtns(){document.getElementById('btnKeep').className='dec-btn'+(pendingDec==='keep'?' sk':'');document.getElementById('btnRetire').className='dec-btn'+(pendingDec==='retire'?' sr':'');document.getElementById('btnNotFound').className='dec-btn'+(pendingDec==='notfound'?' snf':'');const ok=pendingDec==='keep'||pendingDec==='notfound'||(pendingDec==='retire'&&(securePrint||selReplId));document.getElementById('btnSave').disabled=!ok;}
 
 // ══════════════════════════════════════════════════════════
 //  PICKER

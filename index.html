@@ -257,32 +257,34 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .btn-save:disabled{opacity:.25}
 .btn-save:not(:disabled):active{opacity:.8}
 .empty-state{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px}
+.sum-screen{display:none;padding:12px 12px 80px}
 .sum-bld-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden}
 .sum-bld-hdr{padding:12px 14px;display:flex;align-items:center;cursor:pointer;user-select:none;-webkit-user-select:none}
 .sum-bld-name{font-size:14px;font-weight:700}
 .sum-bld-pills{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
-.sum-floor-row{padding:10px 14px 10px 22px;border-top:1px solid var(--border);cursor:pointer;transition:background .15s}
+.sum-floor-row{padding:10px 14px 10px 22px;border-top:1px solid var(--border);cursor:pointer}
 .sum-floor-row:active{background:var(--surface2)}
-.sum-floor-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-.sum-floor-name{font-size:13px;font-weight:600;color:var(--text)}
+.sum-floor-top{display:flex;justify-content:space-between;margin-bottom:6px}
+.sum-floor-name{font-size:13px;font-weight:600}
 .sum-floor-pct{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3)}
 .sum-bar{height:8px;background:var(--surface3);border-radius:4px;overflow:hidden;display:flex;margin-bottom:6px}
-.sum-seg{height:100%;transition:width .4s ease}
-.sum-seg-k{background:var(--keep)}
-.sum-seg-r{background:var(--retire)}
-.sum-seg-n{background:var(--text3)}
-.sum-seg-p{background:var(--border2)}
+.sum-seg-k{background:var(--keep);height:100%}
+.sum-seg-r{background:var(--retire);height:100%}
+.sum-seg-n{background:var(--text3);height:100%}
+.sum-seg-p{background:var(--border2);height:100%}
 .sum-floor-counts{display:flex;gap:5px;flex-wrap:wrap}
-.sum-count{font-size:10px;font-weight:600;padding:2px 6px;border-radius:8px;background:var(--surface3);color:var(--text2)}
-.sum-c-p{background:var(--surface3);color:var(--text2)}
-.sum-c-k{background:var(--keep-bg);color:var(--keep)}
-.sum-c-r{background:var(--retire-bg);color:var(--retire)}
-.sum-c-n{background:var(--surface3);color:var(--text3)}
-.sum-c-c{background:var(--conflict-bg);color:var(--conflict)}
+.sum-pill{font-size:10px;font-weight:600;padding:2px 7px;border-radius:8px}
+.sum-pill-t{background:var(--surface3);color:var(--text2)}
+.sum-pill-p{background:var(--surface3);color:var(--text3)}
+.sum-pill-k{background:var(--keep-bg);color:var(--keep)}
+.sum-pill-r{background:var(--retire-bg);color:var(--retire)}
+.sum-pill-n{background:var(--surface3);color:var(--text3)}
+.sum-pill-c{background:var(--conflict-bg);color:var(--conflict)}
 .sum-legend{display:flex;gap:12px;padding:0 2px 12px;flex-wrap:wrap}
 .sum-leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
-.sum-leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.summary-screen{display:none;padding:12px 12px 80px}
+.sum-leg-dot{width:10px;height:10px;border-radius:50%}
+
+.sum-floor-row:active{background:var(--surface2)}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .summary-bld{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden}
 .summary-bld-hdr{padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
@@ -407,7 +409,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
       <span class="htitle" id="hTitle">Printer Review</span>
       <span class="hbadge" id="hBadge">0/0</span>
       <button class="hbtn green"   onclick="exportCSV()">CSV</button>
-      <button class="hbtn" id="btnSummary" onclick="toggleSummary()">📊</button>
+      <button class="hbtn" id="btnSummary" onclick="toggleSummary()">&#x1F4CA;</button>
       <button class="hbtn purple"  id="conflictBtn" onclick="toggleConflictFilter()" style="display:none">⚠ Conflicts</button>
       <button class="hbtn"         onclick="openDlg('resetDlg')">↩</button>
     </div>
@@ -459,8 +461,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
         <button class="sx" id="searchX" onclick="clearSearch()">✕</button>
       </div>
     </div>
-
-    <div class="summary-screen" id="summaryScreen"></div>
+    <div class="sum-screen" id="sumScreen"></div>
     <div class="list" id="printerList"></div>
 
   </div><!-- /mainApp -->
@@ -1049,144 +1050,169 @@ function setStatusFilter(val){
 }
 
 // ── SUMMARY ────────────────────────────────────────────────────────────────────
-let summaryOpen = false;
-let summaryBldFilter = 'All';
-function toggleSummary(){
+// ── SUMMARY ────────────────────────────────────────────────────────────────────
+var summaryOpen = false;
+var summaryBldFilter = 'All';
+
+function toggleSummary() {
   summaryOpen = !summaryOpen;
-  const btn = document.getElementById('btnSummary');
-  if(summaryOpen){
-    // Hide main content
-    document.getElementById('printerList').style.display   = 'none';
-    document.getElementById('filterSection').style.display = 'none';
-    document.getElementById('searchWrap').style.display    = 'none';
-    document.getElementById('progressWrap').style.display  = 'none';
-    document.getElementById('syncBar').style.display       = 'none';
-    document.getElementById('summaryScreen').style.display = 'block';
+  var btn = document.getElementById('btnSummary');
+  var screen = document.getElementById('sumScreen');
+  var list = document.getElementById('printerList');
+  var fs = document.getElementById('filterSection');
+  var sw = document.getElementById('searchWrap');
+  var pw = document.getElementById('progressWrap');
+  var sb = document.getElementById('syncBar');
+  if (summaryOpen) {
+    list.style.display = 'none';
+    fs.style.display   = 'none';
+    sw.style.display   = 'none';
+    pw.style.display   = 'none';
+    sb.style.display   = 'none';
+    screen.style.display = 'block';
     btn.style.background  = 'var(--accent-dim)';
     btn.style.borderColor = 'var(--accent)';
     btn.style.color       = 'var(--accent)';
-    renderSummary();
+    buildSummary();
   } else {
-    // Show main content
-    document.getElementById('printerList').style.display   = 'flex';
-    document.getElementById('filterSection').style.display = 'flex';
-    document.getElementById('searchWrap').style.display    = 'block';
-    document.getElementById('progressWrap').style.display  = 'block';
-    document.getElementById('syncBar').style.display       = 'flex';
-    document.getElementById('summaryScreen').style.display = 'none';
+    list.style.display = 'flex';
+    fs.style.display   = 'flex';
+    sw.style.display   = 'block';
+    pw.style.display   = 'block';
+    sb.style.display   = 'flex';
+    screen.style.display = 'none';
     btn.style.background  = '';
     btn.style.borderColor = '';
     btn.style.color       = '';
   }
 }
-function calcStats(ps){
-  let keep=0,retire=0,notfound=0,conflict=0;
-  ps.forEach(p=>{
-    const decs=getDecisionsFor(p.id);
-    if(!decs.length)return;
-    if(hasConflict(p.id)){conflict++;return;}
-    const s=decs[0].status;
-    if(s==='keep')keep++;
-    else if(s==='retire')retire++;
-    else if(s==='notfound')notfound++;
-  });
-  const decided=keep+retire+notfound+conflict;
-  return{keep,retire,notfound,conflict,pending:ps.length-decided,decided};
-}
-function renderSummary(){
-  const el = document.getElementById('summaryScreen');
-  try {
-    if(!printers.length){
-      el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#555E7A;font-size:14px">No printer data loaded.</div>';
-      return;
-    }
-    const allBlds = blds();
-    const selBld = summaryBldFilter || 'All';
-    const bldsToShow = selBld==='All' ? allBlds : allBlds.filter(b=>b===selBld);
-    const autoExpand = selBld !== 'All';
 
-    // Dropdown
-    let opts = '<option value="All">All Buildings</option>';
-    allBlds.forEach(function(b){
-      opts += '<option value="' + b.replace(/"/g,'&quot;') + '"' + (b===selBld?' selected':'') + '>' + b + '</option>';
-    });
-
-    let html = '<div style="font-size:17px;font-weight:700;color:var(--text);padding:0 2px 12px">&#x1F4CA; Building Summary</div>';
-    html += '<div class="bld-select-wrap" style="margin-bottom:14px"><select class="bld-select" onchange="summaryBldFilter=this.value;renderSummary()">' + opts + '</select><span class="bld-arrow">&#9660;</span></div>';
-    html += '<div class="sum-legend"><span class="sum-leg-item"><span class="sum-leg-dot" style="background:var(--keep)"></span>Keep</span><span class="sum-leg-item"><span class="sum-leg-dot" style="background:var(--retire)"></span>Retire</span><span class="sum-leg-item"><span class="sum-leg-dot" style="background:var(--text3)"></span>Not Found</span><span class="sum-leg-item"><span class="sum-leg-dot" style="background:var(--border2)"></span>Pending</span></div>';
-
-    bldsToShow.forEach(function(bld){
-      var bp  = printers.filter(function(p){ return p.building === bld; });
-      var bfl = Array.from(new Set(bp.map(function(p){ return p.floor; }))).sort(function(a,b){ return String(a).localeCompare(String(b),undefined,{numeric:true}); });
-      var bs  = calcStats(bp);
-      var pct = bp.length ? Math.round(bs.decided/bp.length*100) : 0;
-      var sid = 'sb' + bld.replace(/[^a-zA-Z0-9]/g,'_');
-      var flOpen = autoExpand ? ' open' : '';
-
-      html += '<div class="sum-bld-card">';
-      html += '<div class="sum-bld-hdr" data-sid="' + sid + '" onclick="var s=this.getAttribute(&quot;data-sid&quot;);document.getElementById(s).classList.toggle(&quot;open&quot;);document.getElementById(&quot;arr&quot;+s).classList.toggle(&quot;open&quot;)">';
-      html += '<div style="flex:1">';
-      html += '<div class="sum-bld-name">' + bld + ' <span style="font-weight:400;font-size:12px;color:var(--text3)">(' + bp.length + ')</span></div>';
-      html += '<div class="sum-bld-pills">';
-      html += '<span class="sum-count">' + bp.length + ' total</span>';
-      if(bs.pending>0)  html += '<span class="sum-count sum-c-p">' + bs.pending + ' pending</span>';
-      if(bs.keep>0)     html += '<span class="sum-count sum-c-k">Keep: ' + bs.keep + '</span>';
-      if(bs.retire>0)   html += '<span class="sum-count sum-c-r">Retire: ' + bs.retire + '</span>';
-      if(bs.notfound>0) html += '<span class="sum-count sum-c-n">Not Found: ' + bs.notfound + '</span>';
-      if(bs.conflict>0) html += '<span class="sum-count sum-c-c">Conflicts: ' + bs.conflict + '</span>';
-      html += '</div></div>';
-      html += '<span style="font-family:JetBrains Mono,monospace;font-size:13px;font-weight:700;margin:0 8px">' + pct + '%</span>';
-      html += '<span class="summary-bld-arrow' + flOpen + '" id="arr' + sid + '">&#9660;</span>';
-      html += '</div>';
-      html += '<div class="summary-bld-bar"><div class="summary-bld-fill" style="width:' + pct + '%"></div></div>';
-      html += '<div class="summary-floors' + flOpen + '" id="' + sid + '">';
-
-      bfl.forEach(function(fl){
-        var fp   = bp.filter(function(p){ return String(p.floor)===String(fl); });
-        var fs   = calcStats(fp);
-        var fpct = fp.length ? Math.round(fs.decided/fp.length*100) : 0;
-        var kw   = fp.length ? Math.round(fs.keep/fp.length*100)     : 0;
-        var rw   = fp.length ? Math.round(fs.retire/fp.length*100)   : 0;
-        var nfw  = fp.length ? Math.round(fs.notfound/fp.length*100) : 0;
-        var pw   = fp.length ? Math.round(fs.pending/fp.length*100)  : 0;
-        var flLabel = fmtFloor(fl);
-        var eBld = bld.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-        var eFl  = String(fl).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-
-        html += '<div class="sum-floor-row" data-bld="' + bld.replace(/"/g,'&quot;') + '" data-fl="' + String(fl).replace(/"/g,'&quot;') + '" onclick="sumGoTo(this.dataset.bld,this.dataset.fl)">';
-        html += '<div class="sum-floor-top"><span class="sum-floor-name">Floor ' + flLabel + '</span><span class="sum-floor-pct">' + fpct + '%</span></div>';
-        html += '<div class="sum-bar">';
-        if(kw>0)  html += '<div class="sum-seg sum-seg-k" style="width:' + kw  + '%"></div>';
-        if(rw>0)  html += '<div class="sum-seg sum-seg-r" style="width:' + rw  + '%"></div>';
-        if(nfw>0) html += '<div class="sum-seg sum-seg-n" style="width:' + nfw + '%"></div>';
-        if(pw>0)  html += '<div class="sum-seg sum-seg-p" style="width:' + pw  + '%"></div>';
-        html += '</div>';
-        html += '<div class="sum-floor-counts">';
-        html += '<span class="sum-count">' + fp.length + ' total</span>';
-        if(fs.pending>0)  html += '<span class="sum-count sum-c-p">' + fs.pending + ' pending</span>';
-        if(fs.keep>0)     html += '<span class="sum-count sum-c-k">Keep: ' + fs.keep + '</span>';
-        if(fs.retire>0)   html += '<span class="sum-count sum-c-r">Retire: ' + fs.retire + '</span>';
-        if(fs.notfound>0) html += '<span class="sum-count sum-c-n">Not Found: ' + fs.notfound + '</span>';
-        if(fs.conflict>0) html += '<span class="sum-count sum-c-c">Conflict: ' + fs.conflict + '</span>';
-        html += '</div></div>';
-      });
-
-      html += '</div></div>';
-    });
-
-    el.innerHTML = html;
-  } catch(err) {
-    el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#FF5B5B;font-size:13px">Error rendering summary: ' + err.message + '</div>';
+function sumCalc(ps) {
+  var keep=0, retire=0, notfound=0, conflict=0;
+  for (var i=0; i<ps.length; i++) {
+    var p = ps[i];
+    var decs = getDecisionsFor(p.id);
+    if (!decs.length) continue;
+    if (hasConflict(p.id)) { conflict++; continue; }
+    var st = decs[0].status;
+    if (st==='keep') keep++;
+    else if (st==='retire') retire++;
+    else if (st==='notfound') notfound++;
   }
+  var decided = keep+retire+notfound+conflict;
+  return {keep:keep, retire:retire, notfound:notfound, conflict:conflict, pending:ps.length-decided, decided:decided};
 }
 
-function sumGoTo(bld, fl){
+function buildSummary() {
+  var el = document.getElementById('sumScreen');
+  if (!printers.length) {
+    el.innerHTML = '<div class="empty-state">No printer data loaded.</div>';
+    return;
+  }
+  var allBlds = blds();
+  var selBld = summaryBldFilter;
+  var bldsToShow = selBld==='All' ? allBlds : [selBld];
+
+  var opts = '<option value="All">All Buildings</option>';
+  for (var i=0; i<allBlds.length; i++) {
+    var b = allBlds[i];
+    opts += '<option value="' + b.replace(/"/g,'&quot;') + '"' + (b===selBld?' selected':'') + '>' + b + '</option>';
+  }
+
+  var html = '<div style="font-size:17px;font-weight:700;padding:0 0 12px">&#x1F4CA; Building Summary</div>';
+  html += '<div class="bld-select-wrap" style="margin-bottom:14px">';
+  html += '<select class="bld-select" onchange="summaryBldFilter=this.value;buildSummary()">' + opts + '</select>';
+  html += '<span class="bld-arrow">&#9660;</span></div>';
+  html += '<div class="sum-legend">';
+  html += '<span class="sum-leg-item"><span class="sum-leg-dot" style="background:var(--keep)"></span>Keep</span>';
+  html += '<span class="sum-leg-item"><span class="sum-leg-dot" style="background:var(--retire)"></span>Retire</span>';
+  html += '<span class="sum-leg-item"><span class="sum-leg-dot" style="background:var(--text3)"></span>Not Found</span>';
+  html += '<span class="sum-leg-item"><span class="sum-leg-dot" style="background:var(--border2)"></span>Pending</span>';
+  html += '</div>';
+
+  for (var bi=0; bi<bldsToShow.length; bi++) {
+    var bld = bldsToShow[bi];
+    var bp = printers.filter(function(p){ return p.building===bld; });
+    var bs = sumCalc(bp);
+    var pct = bp.length ? Math.round(bs.decided/bp.length*100) : 0;
+    var sid = 'sid' + bi;
+    var autoOpen = selBld !== 'All';
+
+    html += '<div class="sum-bld-card">';
+    html += '<div class="sum-bld-hdr" data-sid="' + sid + '" onclick="sumToggle(this)">';
+    html += '<div style="flex:1"><div class="sum-bld-name">' + bld + ' <span style="font-weight:400;font-size:12px;color:var(--text3)">(' + bp.length + ')</span></div>';
+    html += '<div class="sum-bld-pills">';
+    html += '<span class="sum-pill sum-pill-t">' + bp.length + ' total</span>';
+    if (bs.pending>0)  html += '<span class="sum-pill sum-pill-p">' + bs.pending + ' pending</span>';
+    if (bs.keep>0)     html += '<span class="sum-pill sum-pill-k">Keep: ' + bs.keep + '</span>';
+    if (bs.retire>0)   html += '<span class="sum-pill sum-pill-r">Retire: ' + bs.retire + '</span>';
+    if (bs.notfound>0) html += '<span class="sum-pill sum-pill-n">Not Found: ' + bs.notfound + '</span>';
+    if (bs.conflict>0) html += '<span class="sum-pill sum-pill-c">Conflicts: ' + bs.conflict + '</span>';
+    html += '</div></div>';
+    html += '<span style="font-family:JetBrains Mono,monospace;font-size:13px;font-weight:700;margin-left:8px">' + pct + '%</span>';
+    html += '</div>';
+    html += '<div class="summary-bld-bar"><div class="summary-bld-fill" style="width:' + pct + '%"></div></div>';
+    html += '<div id="' + sid + '" style="display:' + (autoOpen?'block':'none') + '">';
+
+    // Floor rows
+    var bfl = [];
+    var flSeen = {};
+    for (var pi=0; pi<bp.length; pi++) {
+      var fl = String(bp[pi].floor);
+      if (!flSeen[fl]) { flSeen[fl]=true; bfl.push(fl); }
+    }
+    bfl.sort(function(a,b){ return a.localeCompare(b,undefined,{numeric:true}); });
+
+    for (var fi=0; fi<bfl.length; fi++) {
+      var fl = bfl[fi];
+      var fp = bp.filter(function(p){ return String(p.floor)===fl; });
+      var fs = sumCalc(fp);
+      var fpct = fp.length ? Math.round(fs.decided/fp.length*100) : 0;
+      var kw  = fp.length ? Math.round(fs.keep/fp.length*100)     : 0;
+      var rw  = fp.length ? Math.round(fs.retire/fp.length*100)   : 0;
+      var nw  = fp.length ? Math.round(fs.notfound/fp.length*100) : 0;
+      var pw  = fp.length ? Math.round(fs.pending/fp.length*100)  : 0;
+      var flLabel = fmtFloor(fl);
+      var rowId = 'flr_' + bi + '_' + fi;
+
+      html += '<div class="sum-floor-row" id="' + rowId + '" data-bld="' + bld.replace(/"/g,'&quot;') + '" data-fl="' + fl.replace(/"/g,'&quot;') + '" onclick="sumNav(this)">';
+      html += '<div class="sum-floor-top"><span class="sum-floor-name">Floor ' + flLabel + '</span><span class="sum-floor-pct">' + fpct + '%</span></div>';
+      html += '<div class="sum-bar">';
+      if (kw>0) html += '<div class="sum-seg-k" style="width:' + kw + '%"></div>';
+      if (rw>0) html += '<div class="sum-seg-r" style="width:' + rw + '%"></div>';
+      if (nw>0) html += '<div class="sum-seg-n" style="width:' + nw + '%"></div>';
+      if (pw>0) html += '<div class="sum-seg-p" style="width:' + pw + '%"></div>';
+      html += '</div>';
+      html += '<div class="sum-floor-counts">';
+      html += '<span class="sum-pill sum-pill-t">' + fp.length + ' total</span>';
+      if (fs.pending>0)  html += '<span class="sum-pill sum-pill-p">' + fs.pending + ' pending</span>';
+      if (fs.keep>0)     html += '<span class="sum-pill sum-pill-k">Keep: ' + fs.keep + '</span>';
+      if (fs.retire>0)   html += '<span class="sum-pill sum-pill-r">Retire: ' + fs.retire + '</span>';
+      if (fs.notfound>0) html += '<span class="sum-pill sum-pill-n">Not Found: ' + fs.notfound + '</span>';
+      if (fs.conflict>0) html += '<span class="sum-pill sum-pill-c">Conflict: ' + fs.conflict + '</span>';
+      html += '</div></div>';
+    }
+    html += '</div></div>';
+  }
+
+  el.innerHTML = html;
+}
+
+function sumToggle(el) {
+  var x = document.getElementById(el.getAttribute('data-sid'));
+  x.style.display = x.style.display === 'none' ? 'block' : 'none';
+}
+function sumNav(el) {
+  var bld = el.getAttribute('data-bld');
+  var fl  = el.getAttribute('data-fl');
   summaryOpen = false;
   toggleSummary();
-  curBld = bld; curFlr = String(fl); statusFilter = 'all';
+  curBld = bld; curFlr = fl; statusFilter = 'all';
   document.getElementById('bldSelect').value = bld;
-  setStatusFilter('all'); renderAll();
+  setStatusFilter('all');
+  renderAll();
 }
+
 
 // ══════════════════════════════════════════════════════════
 //  BACKDROP

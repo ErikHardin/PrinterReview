@@ -274,6 +274,34 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .btn-save:disabled{opacity:.25}
 .btn-save:not(:disabled):active{opacity:.8}
 .empty-state{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px}
+.admin-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:600;align-items:flex-end;justify-content:center}
+.admin-overlay.open{display:flex}
+.admin-sheet{background:var(--surface);border-radius:20px 20px 0 0;border:1px solid var(--border2);border-bottom:none;width:100%;max-width:580px;max-height:90vh;display:flex;flex-direction:column;animation:slideUp .2s cubic-bezier(.22,.68,0,1.2)}
+.admin-hdr{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center}
+.admin-title{font-size:16px;font-weight:700;flex:1}
+.admin-close{padding:6px 12px;border-radius:8px;border:1px solid var(--border2);background:transparent;font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer;color:var(--text2)}
+.admin-body{overflow-y:auto;padding:14px 18px;flex:1}
+.admin-section{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:14px 0 8px}
+.admin-section:first-child{margin-top:0}
+.user-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px}
+.user-row-name{flex:1;font-size:14px;font-weight:600}
+.user-row-pin{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text3);background:var(--surface3);padding:3px 8px;border-radius:6px}
+.user-row-role{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px}
+.role-admin{background:var(--accent-dim);color:var(--accent)}
+.role-reviewer{background:var(--surface3);color:var(--text3)}
+.user-edit-btn{padding:5px 10px;border-radius:7px;border:1px solid var(--border2);background:transparent;font-family:'Sora',sans-serif;font-size:11px;font-weight:600;cursor:pointer;color:var(--text2)}
+.user-del-btn{padding:5px 10px;border-radius:7px;border:1px solid var(--retire-border);background:transparent;font-family:'Sora',sans-serif;font-size:11px;font-weight:600;cursor:pointer;color:var(--retire)}
+.add-user-form{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:14px}
+.add-user-row{display:flex;gap:8px;margin-bottom:8px}
+.add-user-input{flex:1;padding:10px 12px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface);font-family:'Sora',sans-serif;font-size:14px;color:var(--text);outline:none;-webkit-appearance:none}
+.add-user-input:focus{border-color:var(--accent)}
+.add-user-input::placeholder{color:var(--text3)}
+.add-user-pin{width:100px;font-family:'JetBrains Mono',monospace;text-align:center;letter-spacing:.1em}
+.add-user-select{flex:1;padding:10px 12px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface);font-family:'Sora',sans-serif;font-size:14px;color:var(--text);outline:none;-webkit-appearance:none}
+.add-user-btn{width:100%;padding:12px;border-radius:9px;border:none;background:var(--accent);color:#fff;font-family:'Sora',sans-serif;font-size:14px;font-weight:700;cursor:pointer}
+.admin-err{font-size:12px;color:var(--retire);margin-bottom:8px;min-height:16px}
+.hbtn.admin-btn{border-color:var(--accent);color:var(--accent)}
+
 .sum-screen{display:none;padding:12px 12px 80px}
 .sum-bld-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden}
 .sum-bld-hdr{padding:12px 14px;display:flex;align-items:center;cursor:pointer;user-select:none;-webkit-user-select:none}
@@ -426,6 +454,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
       <span class="htitle" id="hTitle">Printer Review</span>
       <span class="hbadge" id="hBadge">0/0</span>
       <button class="hbtn green"   onclick="exportCSV()">CSV</button>
+      <button class="hbtn admin-btn" id="btnAdmin" onclick="openAdmin()" style="display:none">&#x1F464; Users</button>
       <button class="hbtn" id="btnSummary" onclick="toggleSummary()">&#x1F4CA;</button>
       <button class="hbtn purple"  id="conflictBtn" onclick="toggleConflictFilter()" style="display:none">⚠ Conflicts</button>
       <button class="hbtn"         onclick="openDlg('resetDlg')">↩</button>
@@ -552,6 +581,36 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
     </div>
   </div>
 
+
+<!-- Admin sheet -->
+<div class="admin-overlay" id="adminOverlay">
+  <div class="admin-sheet">
+    <div class="admin-hdr">
+      <div class="admin-title">👤 User Management</div>
+      <button class="admin-close" onclick="closeAdmin()">Done</button>
+    </div>
+    <div class="admin-body">
+      <div class="admin-section">Current Users</div>
+      <div id="adminUserList"></div>
+      <div class="admin-section">Add User</div>
+      <div class="add-user-form">
+        <div class="add-user-row">
+          <input class="add-user-input" id="newUserName" type="text" maxlength="30" placeholder="Full name" autocomplete="off">
+          <input class="add-user-input add-user-pin" id="newUserPin" type="password" inputmode="numeric" maxlength="8" placeholder="PIN">
+        </div>
+        <div class="add-user-row">
+          <select class="add-user-select" id="newUserRole">
+            <option value="reviewer">Reviewer</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="admin-err" id="addUserErr"></div>
+        <button class="add-user-btn" onclick="addUser()">Add User</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="floor-celebration" id="floorCelebration">
   <div class="celeb-emoji">🎉</div>
   <div class="celeb-title" id="celebTitle">Floor Complete!</div>
@@ -595,8 +654,12 @@ function pinDel(){pinEntry=pinEntry.slice(0,-1);refreshDots();setMsg('');}
 function refreshDots(state){const len=getPin().length;for(let i=0;i<len;i++){const d=document.getElementById('pd'+i);if(!d)return;d.className='pin-dot'+(state==='err'?' err':i<pinEntry.length?' on':'');}}
 function setMsg(t,cls=''){const m=document.getElementById('pinMsg');m.textContent=t;m.className='pin-msg'+(cls?' '+cls:'');}
 function checkPin(){
-  if(pinEntry===getPin()){setAuthed();document.getElementById('pinScreen').style.display='none';document.getElementById('appRoot').style.display='block';initApp();}
-  else{refreshDots('err');setMsg('Incorrect PIN — try again','e');setTimeout(()=>{pinEntry='';refreshDots();},650);}
+  // Try Firebase user lookup first
+  if(typeof db !== 'undefined' && db) {
+    checkPinWithUsers(pinEntry);
+  } else {
+    checkPinLegacy(pinEntry);
+  }
 }
 function openDlg(id){document.getElementById(id).classList.add('open');}
 function closeDlg(id){document.getElementById(id).classList.remove('open');}
@@ -761,6 +824,12 @@ function hideLoading() {
   document.getElementById('mainApp').style.display = 'block';
   populateBldDropdown();
   initPresence();
+  // Restore admin button if role was saved
+  var savedRole = localStorage.getItem('pr_role') || 'reviewer';
+  currentUserRole = savedRole;
+  if (savedRole === 'admin') {
+    document.getElementById('btnAdmin').style.display = '';
+  }
 }
 function showError(msg) {
   document.getElementById('loadingScreen').style.display = 'none';
@@ -1334,6 +1403,145 @@ function leaseColor(val) {
   return '';                                  // beyond 180 days - normal
 }
 
+// ── USER MANAGEMENT ────────────────────────────────────────────────────────────
+var currentUserRole = 'reviewer'; // 'admin' or 'reviewer'
+var allUsers = {}; // loaded from Firebase
+
+function loadUsers(callback) {
+  db.ref('users').once('value', function(snap) {
+    allUsers = snap.val() || {};
+    if (callback) callback();
+  });
+}
+
+function findUserByPin(pin) {
+  var found = null;
+  Object.keys(allUsers).forEach(function(key) {
+    if (allUsers[key].pin === pin) found = allUsers[key];
+  });
+  return found;
+}
+
+function openAdmin() {
+  loadUsers(function() {
+    renderAdminUserList();
+    document.getElementById('adminOverlay').classList.add('open');
+  });
+}
+
+function closeAdmin() {
+  document.getElementById('adminOverlay').classList.remove('open');
+}
+
+function renderAdminUserList() {
+  var list = document.getElementById('adminUserList');
+  var users = Object.keys(allUsers).map(function(k) {
+    return Object.assign({_key: k}, allUsers[k]);
+  }).sort(function(a,b){ return a.name.localeCompare(b.name); });
+
+  if (!users.length) {
+    list.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:8px 0">No users yet.</div>';
+    return;
+  }
+
+  list.innerHTML = users.map(function(u) {
+    var isMe = u.name === myName;
+    return '<div class="user-row">' +
+      '<div class="user-row-name">' + u.name + (isMe ? ' <span style="color:var(--text3);font-size:11px">(you)</span>' : '') + '</div>' +
+      '<span class="user-row-pin">' + u.pin + '</span>' +
+      '<span class="user-row-role role-' + u.role + '">' + u.role + '</span>' +
+      (!isMe ? '<button class="user-del-btn" data-key="' + u._key + '" onclick="deleteUser(this.dataset.key)">✕</button>' : '') +
+      '</div>';
+  }).join('');
+}
+
+function addUser() {
+  var name = document.getElementById('newUserName').value.trim();
+  var pin  = document.getElementById('newUserPin').value.trim();
+  var role = document.getElementById('newUserRole').value;
+  var err  = document.getElementById('addUserErr');
+  err.textContent = '';
+
+  if (!name) { err.textContent = 'Please enter a name.'; return; }
+  if (!/^\d{4,8}$/.test(pin)) { err.textContent = 'PIN must be 4-8 digits.'; return; }
+
+  // Check for duplicate PIN
+  var dupPin = findUserByPin(pin);
+  if (dupPin) { err.textContent = 'That PIN is already used by ' + dupPin.name + '.'; return; }
+
+  var key = name.toLowerCase().replace(/[^a-z0-9]/g,'_') + '_' + Date.now();
+  var user = { name: name, pin: pin, role: role };
+
+  db.ref('users/' + key).set(user).then(function() {
+    allUsers[key] = user;
+    document.getElementById('newUserName').value = '';
+    document.getElementById('newUserPin').value = '';
+    document.getElementById('newUserRole').value = 'reviewer';
+    renderAdminUserList();
+  }).catch(function(e) { err.textContent = 'Error: ' + e.message; });
+}
+
+function deleteUser(key) {
+  if (!confirm('Remove ' + allUsers[key].name + '?')) return;
+  db.ref('users/' + key).remove().then(function() {
+    delete allUsers[key];
+    renderAdminUserList();
+  });
+}
+
+// ── PIN LOGIN WITH USER LOOKUP ────────────────────────────────────────────────
+function checkPinWithUsers(pin) {
+  // First check if there are any users in Firebase
+  db.ref('users').once('value', function(snap) {
+    var users = snap.val() || {};
+    var userKeys = Object.keys(users);
+
+    if (!userKeys.length) {
+      // No users set up yet - use legacy PIN behavior
+      checkPinLegacy(pin);
+      return;
+    }
+
+    // Find user with this PIN
+    var found = null;
+    userKeys.forEach(function(k) {
+      if (users[k].pin === pin) found = Object.assign({_key: k}, users[k]);
+    });
+
+    if (found) {
+      currentUserRole = found.role;
+      myName = found.name;
+      myKey = nameToKey(found.name);
+      localStorage.setItem('pr_name', found.name);
+      localStorage.setItem('pr_role', found.role);
+      setAuthed();
+      document.getElementById('pinScreen').style.display = 'none';
+      document.getElementById('appRoot').style.display = 'block';
+      // Show admin button if admin
+      if (currentUserRole === 'admin') {
+        document.getElementById('btnAdmin').style.display = '';
+      }
+      startApp(FIREBASE_URL);
+    } else {
+      // PIN not found in users - try legacy
+      checkPinLegacy(pin);
+    }
+  });
+}
+
+function checkPinLegacy(pin) {
+  if (pin === getPin()) {
+    setAuthed();
+    document.getElementById('pinScreen').style.display = 'none';
+    document.getElementById('appRoot').style.display = 'block';
+    initApp();
+  } else {
+    refreshDots('err');
+    setMsg('Incorrect PIN — try again', 'e');
+    setTimeout(function(){ pinEntry=''; refreshDots(); }, 650);
+  }
+}
+
 // ── PRESENCE ───────────────────────────────────────────────────────────────────
 var presenceRef = null;
 var myPresenceRef = null;
@@ -1512,6 +1720,7 @@ if(window.visualViewport){
   window.visualViewport.addEventListener('resize',()=>{if(document.getElementById('overlay').classList.contains('open'))setModalHeight();});
 }
 document.getElementById('overlay').addEventListener('click',e=>{if(e.target===document.getElementById('overlay'))closeModal();});
+document.getElementById('adminOverlay').addEventListener('click',function(e){if(e.target===document.getElementById('adminOverlay'))closeAdmin();});
 
 // ══════════════════════════════════════════════════════════
 //  INIT

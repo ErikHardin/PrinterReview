@@ -382,6 +382,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
       <span class="htitle" id="hTitle">Printer Review</span>
       <span class="hbadge" id="hBadge">0/0</span>
       <button class="hbtn green"   onclick="exportCSV()">CSV</button>
+      <button class="hbtn" id="btnSummary" onclick="toggleSummary()">📊</button>
       <button class="hbtn purple"  id="conflictBtn" onclick="toggleConflictFilter()" style="display:none">⚠ Conflicts</button>
       <button class="hbtn"         onclick="openDlg('resetDlg')">↩</button>
     </div>
@@ -876,27 +877,6 @@ function renderAll(){renderFlrBar();renderList();updateProgress();}
 // ══════════════════════════════════════════════════════════
 //  SEARCH
 // ══════════════════════════════════════════════════════════
-function setStatusFilter(val){
-  statusFilter=val;
-  // Update chip active states
-  ['all','pending','keep','retire','notfound','conflict'].forEach(s=>{
-    const btn=document.getElementById('sf-'+s);
-    if(!btn)return;
-    btn.className='chip'+(val===s?' af':'');
-    // Special colors for status chips when active
-    if(val===s){
-      if(s==='pending')btn.style.cssText='background:var(--surface3);border-color:var(--border2);color:var(--text)';
-      else if(s==='keep')btn.style.cssText='background:var(--keep-bg);border-color:var(--keep-border);color:var(--keep)';
-      else if(s==='retire')btn.style.cssText='background:var(--retire-bg);border-color:var(--retire-border);color:var(--retire)';
-      else if(s==='notfound')btn.style.cssText='background:var(--surface3);border-color:var(--border2);color:var(--text2)';
-      else if(s==='conflict')btn.style.cssText='background:var(--conflict-bg);border-color:var(--conflict-border);color:var(--conflict)';
-      else btn.style.cssText='';
-    } else {
-      btn.style.cssText='';
-    }
-  });
-  renderList();updateProgress();
-}
 function onSearch(v){searchQ=v.trim();document.getElementById('searchX').classList.toggle('show',searchQ.length>0);renderList();updateProgress();}
 function clearSearch(){document.getElementById('globalSearch').value='';onSearch('');}
 
@@ -1020,6 +1000,90 @@ function exportCSV(){
   const csv=rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
   a.download='printer-review-'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+}
+
+// ── STATUS FILTER ─────────────────────────────────────────────────────────────
+function setStatusFilter(val){
+  statusFilter = val;
+  ['all','pending','keep','retire','notfound','conflict'].forEach(s => {
+    const btn = document.getElementById('sf-' + s);
+    if (!btn) return;
+    btn.style.cssText = '';
+    btn.className = 'chip';
+    if (val === s) {
+      if (s === 'all')       btn.className = 'chip af';
+      else if (s === 'pending')  btn.style.cssText = 'flex-shrink:0;background:var(--surface3);border-color:var(--text3);color:var(--text)';
+      else if (s === 'keep')     btn.style.cssText = 'flex-shrink:0;background:var(--keep-bg);border-color:var(--keep-border);color:var(--keep)';
+      else if (s === 'retire')   btn.style.cssText = 'flex-shrink:0;background:var(--retire-bg);border-color:var(--retire-border);color:var(--retire)';
+      else if (s === 'notfound') btn.style.cssText = 'flex-shrink:0;background:var(--surface3);border-color:var(--border2);color:var(--text2)';
+      else if (s === 'conflict') btn.style.cssText = 'flex-shrink:0;background:var(--conflict-bg);border-color:var(--conflict-border);color:var(--conflict)';
+    }
+  });
+  renderList();
+  updateProgress();
+}
+
+// ── SUMMARY ────────────────────────────────────────────────────────────────────
+let summaryOpen = false;
+function toggleSummary(){
+  summaryOpen = !summaryOpen;
+  document.getElementById('summaryScreen').classList.toggle('open', summaryOpen);
+  document.getElementById('printerList').style.display = summaryOpen ? 'none' : 'flex';
+  const btn = document.getElementById('btnSummary');
+  btn.style.background  = summaryOpen ? 'var(--accent-dim)' : '';
+  btn.style.borderColor = summaryOpen ? 'var(--accent)' : '';
+  btn.style.color       = summaryOpen ? 'var(--accent)' : '';
+  if (summaryOpen) renderSummary();
+}
+function calcStats(ps){
+  let keep=0,retire=0,notfound=0,conflict=0;
+  ps.forEach(p=>{
+    const decs=getDecisionsFor(p.id);
+    if(!decs.length)return;
+    if(hasConflict(p.id)){conflict++;return;}
+    const s=decs[0].status;
+    if(s==='keep')keep++;
+    else if(s==='retire')retire++;
+    else if(s==='notfound')notfound++;
+  });
+  const decided=keep+retire+notfound+conflict;
+  return{keep,retire,notfound,conflict,pending:ps.length-decided,decided};
+}
+function renderSummary(){
+  const screen=document.getElementById('summaryScreen');
+  screen.innerHTML='<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;padding:4px 2px 12px">Building Summary</div>';
+  blds().forEach(bld=>{
+    const bp=printers.filter(p=>p.building===bld);
+    const bfl=[...new Set(bp.map(p=>p.floor))].sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true}));
+    const bs=calcStats(bp);
+    const pct=bp.length?Math.round(bs.decided/bp.length*100):0;
+    const sid=bld.replace(/[^a-z0-9]/gi,'_');
+    const bldDiv=document.createElement('div');bldDiv.className='summary-bld';
+    const hdr=document.createElement('div');hdr.className='summary-bld-hdr';
+    hdr.innerHTML=`<div style="flex:1"><div class="summary-bld-name">${bld} <span style="font-weight:400;font-size:12px;color:var(--text3)">(${bp.length})</span></div><div style="display:flex;gap:5px;margin-top:5px;flex-wrap:wrap"><span class="stat-pill" style="background:var(--surface3);color:var(--text2);border:1px solid var(--border2)">${bp.length} total</span>${bs.pending>0?`<span class="stat-pill sp-pending">${bs.pending} pending</span>`:''} ${bs.keep>0?`<span class="stat-pill sp-keep">✓ ${bs.keep}</span>`:''} ${bs.retire>0?`<span class="stat-pill sp-retire">✗ ${bs.retire}</span>`:''} ${bs.notfound>0?`<span class="stat-pill sp-nf">? ${bs.notfound}</span>`:''} ${bs.conflict>0?`<span class="stat-pill sp-conflict">⚠ ${bs.conflict}</span>`:''}</div></div><div style="text-align:right;flex-shrink:0;margin-left:8px"><div class="summary-bld-pct">${pct}%</div></div><span class="summary-bld-arrow" id="arrow-${sid}">▼</span>`;
+    const bar=document.createElement('div');bar.className='summary-bld-bar';bar.innerHTML=`<div class="summary-bld-fill" style="width:${pct}%"></div>`;
+    const fd=document.createElement('div');fd.className='summary-floors';fd.id='floors-'+sid;
+    bfl.forEach(fl=>{
+      const fp=bp.filter(p=>String(p.floor)===String(fl));
+      const fs=calcStats(fp);
+      const fp2=fp.length?Math.round(fs.decided/fp.length*100):0;
+      const fd2=document.createElement('div');fd2.className='summary-floor';fd2.style.cursor='pointer';
+      fd2.onclick=()=>{
+        summaryOpen=false;
+        document.getElementById('summaryScreen').classList.remove('open');
+        document.getElementById('printerList').style.display='flex';
+        const b=document.getElementById('btnSummary');b.style.background='';b.style.borderColor='';b.style.color='';
+        curBld=bld;curFlr=String(fl);statusFilter='all';
+        document.getElementById('bldSelect').value=bld;
+        setStatusFilter('all');renderAll();
+      };
+      fd2.innerHTML=`<div class="summary-floor-name">Floor ${fmtFloor(fl)}</div><div class="summary-floor-stats"><span class="stat-pill" style="background:var(--surface3);color:var(--text2);border:1px solid var(--border2)">${fp.length}</span>${fs.pending>0?`<span class="stat-pill sp-pending">${fs.pending}</span>`:''} ${fs.keep>0?`<span class="stat-pill sp-keep">✓ ${fs.keep}</span>`:''} ${fs.retire>0?`<span class="stat-pill sp-retire">✗ ${fs.retire}</span>`:''} ${fs.notfound>0?`<span class="stat-pill sp-nf">? ${fs.notfound}</span>`:''} ${fs.conflict>0?`<span class="stat-pill sp-conflict">⚠ ${fs.conflict}</span>`:''}</div><span class="summary-floor-pct">${fp2}%</span>`;
+      fd.appendChild(fd2);
+    });
+    hdr.onclick=()=>{document.getElementById('floors-'+sid).classList.toggle('open');document.getElementById('arrow-'+sid).classList.toggle('open');};
+    bldDiv.appendChild(hdr);bldDiv.appendChild(bar);bldDiv.appendChild(fd);
+    screen.appendChild(bldDiv);
+  });
 }
 
 // ══════════════════════════════════════════════════════════

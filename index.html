@@ -898,7 +898,7 @@ function renderList(){
     if(allDecs.length){
       rev=`<div class="prow-reviewers">👤 ${allDecs.map(d=>d.reviewer).join(', ')}</div>`;
     }
-    row.innerHTML=`<div class="prow-top"><div class="prow-main"><div class="prow-ids">${p.dnumber} · ${p.bnumber}${p.serial?` · <span style="color:var(--text3)">S/N: ${p.serial}</span>`:''}</div><div class="prow-model">${p.model}</div><div class="prow-loc">${[p.dept,p.room?'Rm '+p.room:''].filter(Boolean).join(' · ')}</div>${rn}${rev}</div><span class="sbadge ${bc}">${bt}</span></div><div class="prow-meta"><span>Fl ${fmtFloor(p.floor)}</span><span class="${hi(p.avgPages)?'mw':''}">📄 ${fmt(p.avgPages)}/mo${hi(p.avgPages)?' ⚠️':''}</span>${p.epic>0?'<span class="epic-yes">EPIC '+p.epic+'</span>':''}</div>`;
+    row.innerHTML=`<div class="prow-top"><div class="prow-main"><div class="prow-ids">${p.dnumber} · ${p.bnumber}</div>${p.serial?`<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:.03em;margin-bottom:2px">S/N: ${p.serial}</div>`:''}<div class="prow-model">${p.model}</div><div class="prow-loc">${[p.dept,p.room?'Rm '+p.room:''].filter(Boolean).join(' · ')}</div>${rn}${rev}</div><span class="sbadge ${bc}">${bt}</span></div><div class="prow-meta"><span>Fl ${fmtFloor(p.floor)}</span><span class="${hi(p.avgPages)?'mw':''}">📄 ${fmt(p.avgPages)}/mo${hi(p.avgPages)?' ⚠️':''}</span>${p.epic>0?'<span class="epic-yes">EPIC '+p.epic+'</span>':''}</div>`;
     list.appendChild(row);
   });
   if(more>0){const note=document.createElement('div');note.className='empty-state';note.style.padding='16px';note.innerHTML=`<div style="font-size:13px;color:var(--text3)">+${more.toLocaleString()} more — use filters or search to narrow down.</div>`;list.appendChild(note);}
@@ -1046,11 +1046,12 @@ function exportCSV(){
   printers.forEach(p=>{
     const decs=getDecisionsFor(p.id);
     if(!decs.length)return; // skip pending
+    // One row per printer — most recent decision wins
+    const d=decs.reduce((a,b)=>(b.ts||0)>(a.ts||0)?b:a,decs[0]);
     const isConflict=hasConflict(p.id);
-    decs.forEach(d=>{
-      const rp=d.replacementId?printers.find(x=>x.dnumber===d.replacementId):null;
-      const decDate=d.ts?new Date(d.ts).toLocaleDateString('en-US',{year:'numeric',month:'2-digit',day:'2-digit'}):'';rows.push([d.reviewer,p.institute,p.dept,p.building,p.floor,p.room,p.model,p.dnumber,p.bnumber,p.serial||'',p.avgPages,p.epic||0,d.status,decDate,d.securePrint?'YES':'',rp?.model||'',rp?.dnumber||'',rp?.bnumber||'',isConflict?'YES':'']);
-    });
+    const rp=d.replacementId?printers.find(x=>x.dnumber===d.replacementId):null;
+    const decDate=d.ts?new Date(d.ts).toLocaleDateString('en-US',{year:'numeric',month:'2-digit',day:'2-digit'}):'';
+    rows.push([d.reviewer,p.institute,p.dept,p.building,p.floor,p.room,p.model,p.dnumber,p.bnumber,p.serial||'',p.avgPages,p.epic||0,d.status,decDate,d.securePrint?'YES':'',rp?.model||'',rp?.dnumber||'',rp?.bnumber||'',isConflict?'YES':'']);
   });
   const csv=rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));

@@ -1105,9 +1105,6 @@ function sumCalc(ps) {
 
 function buildSummary() {
   var el = document.getElementById('sumScreen');
-  el.style.background = 'red';
-  el.style.minHeight = '200px';
-  el.innerHTML = '<div style="padding:20px;color:white;font-size:20px;font-weight:bold">SUMMARY LOADING - printers: ' + printers.length + '</div>';
   try {
   if (!printers.length) {
     el.innerHTML = '<div class="empty-state">No printer data loaded. Printers array length: 0</div>';

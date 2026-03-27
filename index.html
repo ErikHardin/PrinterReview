@@ -964,8 +964,15 @@ function openModal(id){
     }).join('');
   } else {cp.style.display='none';}
 
-  const n=printers.filter(x=>x.id!==id&&x.building===p.building&&String(x.floor)===String(p.floor)).length;
-  document.getElementById('replScope').textContent=n.toLocaleString()+' printer'+(n!==1?'s':'')+' on Floor '+fmtFloor(p.floor)+' of '+p.building;
+  const n=printers.filter(x=>{
+    if(x.id===id)return false;
+    if(x.building!==p.building||String(x.floor)!==String(p.floor))return false;
+    const xd=getDecisionsFor(x.id);
+    if(!xd.length)return true;
+    const mr=xd.reduce((a,b)=>(b.ts||0)>(a.ts||0)?b:a,xd[0]);
+    return mr.status==='keep';
+  }).length;
+  document.getElementById('replScope').textContent=n.toLocaleString()+' available printer'+(n!==1?'s':'')+' on Floor '+fmtFloor(p.floor)+' of '+p.building;
   document.getElementById('srchIn').value='';
   securePrint=myDec&&myDec.securePrint||false;
   const spw=document.getElementById('securePrintWrap');spw.classList.toggle('show',pendingDec==='retire');

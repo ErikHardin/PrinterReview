@@ -1532,8 +1532,11 @@ function checkPinWithUsers(pin) {
 function checkPinLegacy(pin) {
   if (pin === getPin()) {
     setAuthed();
+    currentUserRole = 'admin'; // legacy login = admin so they can set up users
+    localStorage.setItem('pr_role', 'admin');
     document.getElementById('pinScreen').style.display = 'none';
     document.getElementById('appRoot').style.display = 'block';
+    document.getElementById('btnAdmin').style.display = '';
     initApp();
   } else {
     refreshDots('err');

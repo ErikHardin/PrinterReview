@@ -367,17 +367,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
   <div class="pin-msg"  id="pinMsg"></div>
 </div>
 
-    <input class="dlg-input dlg-pin" id="cpOld"  type="password" inputmode="numeric" maxlength="8" placeholder="Current PIN">
-    <input class="dlg-input dlg-pin" id="cpNew"  type="password" inputmode="numeric" maxlength="8" placeholder="New PIN (4–8 digits)">
-    <input class="dlg-input dlg-pin" id="cpConf" type="password" inputmode="numeric" maxlength="8" placeholder="Confirm new PIN">
-    <div class="dlg-note">PIN must be 4–8 digits.</div>
-    <div class="dlg-err" id="cpErr"></div>
-    <div class="dlg-btns">
-      <button class="dlg-cancel" onclick="closeDlg('changePinDlg')">Cancel</button>
-      <button class="dlg-ok"     onclick="saveNewPin()">Save</button>
-    </div>
-  </div>
-</div>
+
 
 <!-- Change My PIN -->
 <div class="dlg" id="changePinDlg">
@@ -674,7 +664,7 @@ function checkPin(){
 }
 function openDlg(id){document.getElementById(id).classList.add('open');}
 function closeDlg(id){document.getElementById(id).classList.remove('open');}
-function saveNewPin(){
+function saveNewPin_DISABLED(){
   const o=document.getElementById('cpOld').value.trim(),n=document.getElementById('cpNew').value.trim(),c=document.getElementById('cpConf').value.trim(),e=document.getElementById('cpErr');
   if(o!==getPin()){e.textContent='Current PIN is incorrect.';return;}
   if(!/^\d{4,8}$/.test(n)){e.textContent='New PIN must be 4–8 digits.';return;}

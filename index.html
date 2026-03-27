@@ -1350,26 +1350,41 @@ function addSwipeToKeep(row, printerId) {
     row.style.background = '';
     if (dragging && dx > 80) {
       // Swipe right confirmed - keep it
-      quickKeep(printerId, row);
+      handleSwipeRight(printerId, row);
     }
     dragging = false;
   }, {passive:true});
 }
 
-function quickKeep(printerId, row) {
+function handleSwipeRight(printerId, row) {
   var p = printers.find(function(x){ return x.id===printerId; });
   if (!p) return;
-  // Animate the row
-  row.classList.add('swipe-animate');
-  setTimeout(function(){ row.classList.remove('swipe-animate'); }, 400);
-  var dec = {status:'keep', replacementId:null, securePrint:false, reviewer:myName, ts:Date.now()};
+  var decs = getDecisionsFor(printerId);
+  var myDec = getMyDecision(printerId);
   var fireKey = dkey(p.dnumber);
-  db.ref('decisions/'+fireKey+'/'+myKey).set(dec)
-    .then(function(){
-      renderAll();
-      checkFloorComplete();
-    })
-    .catch(function(e){ alert('Save failed: '+e.message); });
+
+  if (!decs.length) {
+    // Pending — swipe right = Keep
+    row.classList.add('swipe-animate');
+    setTimeout(function(){ row.classList.remove('swipe-animate'); }, 400);
+    var dec = {status:'keep', replacementId:null, securePrint:false, reviewer:myName, ts:Date.now()};
+    db.ref('decisions/'+fireKey+'/'+myKey).set(dec)
+      .then(function(){ renderAll(); checkFloorComplete(); })
+      .catch(function(e){ alert('Save failed: '+e.message); });
+
+  } else if (myDec) {
+    // I made a decision — swipe right = reset to pending
+    if (confirm('Reset your decision on ' + p.dnumber + ' back to Pending?')) {
+      db.ref('decisions/'+fireKey+'/'+myKey).remove()
+        .then(function(){ renderAll(); })
+        .catch(function(e){ alert('Reset failed: '+e.message); });
+    }
+
+  } else {
+    // Someone else made a decision
+    var reviewers = decs.map(function(d){ return d.reviewer; }).join(', ');
+    alert('This printer was decided by ' + reviewers + '. Please speak with them if you need it reset to Pending.');
+  }
 }
 
 // ── FLOOR CELEBRATION ─────────────────────────────────────────────────────────

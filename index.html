@@ -1025,10 +1025,13 @@ function setStatusFilter(val){
 
 // ── SUMMARY ────────────────────────────────────────────────────────────────────
 let summaryOpen = false;
+let summaryBldFilter = 'All';
 function toggleSummary(){
   summaryOpen = !summaryOpen;
   document.getElementById('summaryScreen').classList.toggle('open', summaryOpen);
-  document.getElementById('printerList').style.display = summaryOpen ? 'none' : 'flex';
+  document.getElementById('printerList').style.display   = summaryOpen ? 'none'  : 'flex';
+  document.getElementById('filterSection').style.display = summaryOpen ? 'none'  : 'flex';
+  document.getElementById('searchWrap').style.display    = summaryOpen ? 'none'  : 'block';
   const btn = document.getElementById('btnSummary');
   btn.style.background  = summaryOpen ? 'var(--accent-dim)' : '';
   btn.style.borderColor = summaryOpen ? 'var(--accent)' : '';
@@ -1049,10 +1052,24 @@ function calcStats(ps){
   const decided=keep+retire+notfound+conflict;
   return{keep,retire,notfound,conflict,pending:ps.length-decided,decided};
 }
-function renderSummary(){
+function renderSummary(filterBld){
   const screen=document.getElementById('summaryScreen');
-  screen.innerHTML='<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;padding:4px 2px 12px">Building Summary</div>';
-  blds().forEach(bld=>{
+  const allBlds = blds();
+  const activeBld = filterBld || summaryBldFilter || 'All';
+
+  // Header with building dropdown
+  screen.innerHTML = `
+    <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;padding:4px 2px 10px">Building Summary</div>
+    <div class="bld-select-wrap" style="margin-bottom:12px">
+      <select class="bld-select" id="summaryBldSelect" onchange="summaryBldFilter=this.value;renderSummary(this.value)">
+        <option value="All">All Buildings</option>
+        ${allBlds.map(b=>`<option value="${b}" ${b===activeBld?'selected':''}>${b}</option>`).join('')}
+      </select>
+      <span class="bld-arrow">▼</span>
+    </div>`;
+
+  const bldsToShow = activeBld === 'All' ? allBlds : allBlds.filter(b=>b===activeBld);
+  bldsToShow.forEach(bld=>{
     const bp=printers.filter(p=>p.building===bld);
     const bfl=[...new Set(bp.map(p=>p.floor))].sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true}));
     const bs=calcStats(bp);
@@ -1060,7 +1077,22 @@ function renderSummary(){
     const sid=bld.replace(/[^a-z0-9]/gi,'_');
     const bldDiv=document.createElement('div');bldDiv.className='summary-bld';
     const hdr=document.createElement('div');hdr.className='summary-bld-hdr';
-    hdr.innerHTML=`<div style="flex:1"><div class="summary-bld-name">${bld} <span style="font-weight:400;font-size:12px;color:var(--text3)">(${bp.length})</span></div><div style="display:flex;gap:5px;margin-top:5px;flex-wrap:wrap"><span class="stat-pill" style="background:var(--surface3);color:var(--text2);border:1px solid var(--border2)">${bp.length} total</span>${bs.pending>0?`<span class="stat-pill sp-pending">${bs.pending} pending</span>`:''} ${bs.keep>0?`<span class="stat-pill sp-keep">✓ ${bs.keep}</span>`:''} ${bs.retire>0?`<span class="stat-pill sp-retire">✗ ${bs.retire}</span>`:''} ${bs.notfound>0?`<span class="stat-pill sp-nf">? ${bs.notfound}</span>`:''} ${bs.conflict>0?`<span class="stat-pill sp-conflict">⚠ ${bs.conflict}</span>`:''}</div></div><div style="text-align:right;flex-shrink:0;margin-left:8px"><div class="summary-bld-pct">${pct}%</div></div><span class="summary-bld-arrow" id="arrow-${sid}">▼</span>`;
+    hdr.innerHTML=`
+      <div style="flex:1">
+        <div class="summary-bld-name">${bld}</div>
+        <div style="display:flex;gap:5px;margin-top:5px;flex-wrap:wrap">
+          <span class="stat-pill" style="background:var(--surface3);color:var(--text2);border:1px solid var(--border2)">${bp.length} total</span>
+          ${bs.pending>0  ? `<span class="stat-pill sp-pending">${bs.pending} pending</span>`     : ''}
+          ${bs.keep>0     ? `<span class="stat-pill sp-keep">Keep: ${bs.keep}</span>`             : ''}
+          ${bs.retire>0   ? `<span class="stat-pill sp-retire">Retire: ${bs.retire}</span>`       : ''}
+          ${bs.notfound>0 ? `<span class="stat-pill sp-nf">Not Found: ${bs.notfound}</span>`      : ''}
+          ${bs.conflict>0 ? `<span class="stat-pill sp-conflict">Conflicts: ${bs.conflict}</span>`: ''}
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;margin-left:8px">
+        <div class="summary-bld-pct">${pct}%</div>
+      </div>
+      <span class="summary-bld-arrow" id="arrow-${sid}">▼</span>`;
     const bar=document.createElement('div');bar.className='summary-bld-bar';bar.innerHTML=`<div class="summary-bld-fill" style="width:${pct}%"></div>`;
     const fd=document.createElement('div');fd.className='summary-floors';fd.id='floors-'+sid;
     bfl.forEach(fl=>{
@@ -1072,12 +1104,26 @@ function renderSummary(){
         summaryOpen=false;
         document.getElementById('summaryScreen').classList.remove('open');
         document.getElementById('printerList').style.display='flex';
+        document.getElementById('filterSection').style.display='flex';
+        document.getElementById('searchWrap').style.display='block';
         const b=document.getElementById('btnSummary');b.style.background='';b.style.borderColor='';b.style.color='';
         curBld=bld;curFlr=String(fl);statusFilter='all';
         document.getElementById('bldSelect').value=bld;
         setStatusFilter('all');renderAll();
       };
-      fd2.innerHTML=`<div class="summary-floor-name">Floor ${fmtFloor(fl)}</div><div class="summary-floor-stats"><span class="stat-pill" style="background:var(--surface3);color:var(--text2);border:1px solid var(--border2)">${fp.length}</span>${fs.pending>0?`<span class="stat-pill sp-pending">${fs.pending}</span>`:''} ${fs.keep>0?`<span class="stat-pill sp-keep">✓ ${fs.keep}</span>`:''} ${fs.retire>0?`<span class="stat-pill sp-retire">✗ ${fs.retire}</span>`:''} ${fs.notfound>0?`<span class="stat-pill sp-nf">? ${fs.notfound}</span>`:''} ${fs.conflict>0?`<span class="stat-pill sp-conflict">⚠ ${fs.conflict}</span>`:''}</div><span class="summary-floor-pct">${fp2}%</span>`;
+      fd2.innerHTML=`
+        <div style="flex:1">
+          <div class="summary-floor-name">Floor ${fmtFloor(fl)}</div>
+          <div style="display:flex;gap:5px;margin-top:4px;flex-wrap:wrap">
+            <span class="stat-pill" style="background:var(--surface3);color:var(--text2);border:1px solid var(--border2)">${fp.length} total</span>
+            ${fs.pending>0  ? `<span class="stat-pill sp-pending">${fs.pending} pending</span>`  : ''}
+            ${fs.keep>0     ? `<span class="stat-pill sp-keep">Keep: ${fs.keep}</span>`          : ''}
+            ${fs.retire>0   ? `<span class="stat-pill sp-retire">Retire: ${fs.retire}</span>`    : ''}
+            ${fs.notfound>0 ? `<span class="stat-pill sp-nf">Not Found: ${fs.notfound}</span>`   : ''}
+            ${fs.conflict>0 ? `<span class="stat-pill sp-conflict">Conflict: ${fs.conflict}</span>` : ''}
+          </div>
+        </div>
+        <span class="summary-floor-pct">${fp2}%</span>`;
       fd.appendChild(fd2);
     });
     hdr.onclick=()=>{document.getElementById('floors-'+sid).classList.toggle('open');document.getElementById('arrow-'+sid).classList.toggle('open');};

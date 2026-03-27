@@ -365,13 +365,8 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
   <div class="pin-dots" id="pinDots"></div>
   <div class="pin-pad"  id="pinPad"></div>
   <div class="pin-msg"  id="pinMsg"></div>
-  <button class="pin-link" onclick="openDlg('changePinDlg')">Change PIN</button>
 </div>
 
-<!-- Change PIN -->
-<div class="dlg" id="changePinDlg">
-  <div class="dlg-box">
-    <div class="dlg-title">Change PIN</div>
     <input class="dlg-input dlg-pin" id="cpOld"  type="password" inputmode="numeric" maxlength="8" placeholder="Current PIN">
     <input class="dlg-input dlg-pin" id="cpNew"  type="password" inputmode="numeric" maxlength="8" placeholder="New PIN (4–8 digits)">
     <input class="dlg-input dlg-pin" id="cpConf" type="password" inputmode="numeric" maxlength="8" placeholder="Confirm new PIN">
@@ -380,6 +375,21 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
     <div class="dlg-btns">
       <button class="dlg-cancel" onclick="closeDlg('changePinDlg')">Cancel</button>
       <button class="dlg-ok"     onclick="saveNewPin()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Change My PIN -->
+<div class="dlg" id="changePinDlg">
+  <div class="dlg-box">
+    <div class="dlg-title">Change My PIN</div>
+    <div class="dlg-body">Enter a new PIN for your account. You'll use this next time you log in.</div>
+    <input class="dlg-input dlg-pin" id="cpNew"  type="password" inputmode="numeric" maxlength="8" placeholder="New PIN (4–8 digits)">
+    <input class="dlg-input dlg-pin" id="cpConf" type="password" inputmode="numeric" maxlength="8" placeholder="Confirm new PIN">
+    <div class="dlg-err" id="cpErr"></div>
+    <div class="dlg-btns">
+      <button class="dlg-cancel" onclick="closeDlg('changePinDlg')">Cancel</button>
+      <button class="dlg-ok" onclick="saveMyNewPin()">Save</button>
     </div>
   </div>
 </div>
@@ -457,6 +467,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
       <button class="hbtn admin-btn" id="btnAdmin" onclick="openAdmin()" style="display:none">&#x1F464; Users</button>
       <button class="hbtn" id="btnSummary" onclick="toggleSummary()">&#x1F4CA;</button>
       <button class="hbtn purple"  id="conflictBtn" onclick="toggleConflictFilter()" style="display:none">⚠ Conflicts</button>
+      <button class="hbtn"         onclick="openDlg('changePinDlg')">🔑</button>
       <button class="hbtn"         onclick="openDlg('resetDlg')">↩</button>
     </div>
 
@@ -1412,6 +1423,28 @@ function leaseColor(val) {
   if (days <= 90)  return 'var(--retire)';   // within 90 days - red
   if (days <= 180) return 'var(--warn)';     // within 180 days - orange
   return '';                                  // beyond 180 days - normal
+}
+
+function saveMyNewPin() {
+  var n = document.getElementById('cpNew').value.trim();
+  var conf = document.getElementById('cpConf').value.trim();
+  var err = document.getElementById('cpErr');
+  err.textContent = '';
+  if (!/^\d{4,8}$/.test(n)) { err.textContent = 'PIN must be 4–8 digits.'; return; }
+  if (n !== conf) { err.textContent = 'PINs do not match.'; return; }
+  // Find my user key in Firebase and update
+  db.ref('users').once('value', function(snap) {
+    var users = snap.val() || {};
+    var myUserKey = null;
+    Object.keys(users).forEach(function(k) {
+      if (users[k].name === myName) myUserKey = k;
+    });
+    if (!myUserKey) { err.textContent = 'Could not find your account.'; return; }
+    db.ref('users/' + myUserKey + '/pin').set(n).then(function() {
+      closeDlg('changePinDlg');
+      alert('PIN updated! Use ' + n + ' next time you log in.');
+    }).catch(function(e) { err.textContent = 'Error: ' + e.message; });
+  });
 }
 
 // ── USER MANAGEMENT ────────────────────────────────────────────────────────────

@@ -409,7 +409,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
       <span class="htitle" id="hTitle">Printer Review</span>
       <span class="hbadge" id="hBadge">0/0</span>
       <button class="hbtn green"   onclick="exportCSV()">CSV</button>
-      <button class="hbtn" id="btnSummary" onclick="document.getElementById('sumScreen').style.display='block';document.getElementById('sumScreen').innerHTML='<div style=&quot;padding:30px;font-size:18px;color:white;background:green&quot;>CLICKED! Printers: '+printers.length+'</div>';document.getElementById('printerList').style.display='none'">&#x1F4CA;</button>
+      <button class="hbtn" id="btnSummary" onclick="toggleSummary()">&#x1F4CA;</button>
       <button class="hbtn purple"  id="conflictBtn" onclick="toggleConflictFilter()" style="display:none">⚠ Conflicts</button>
       <button class="hbtn"         onclick="openDlg('resetDlg')">↩</button>
     </div>
@@ -419,7 +419,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
       <span id="syncText">Connecting…</span>
     </div>
 
-    <div class="progress-wrap">
+    <div class="progress-wrap" id="progressWrap">
       <div class="progress-row">
         <span class="progress-label" id="progressLabel">Select a building</span>
         <span class="progress-nums"  id="progressNums">— / —</span>
@@ -427,7 +427,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
       <div class="pbar-bg"><div class="pbar-fill" id="pbarFill" style="width:0%"></div></div>
     </div>
 
-    <div class="filter-section">
+    <div class="filter-section" id="filterSection">
       <div class="bld-select-wrap">
         <select class="bld-select" id="bldSelect" onchange="onBldChange(this.value)">
           <option value="All">All Buildings</option>
@@ -451,7 +451,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
       </div>
     </div>
 
-    <div class="search-wrap">
+    <div class="search-wrap" id="searchWrap">
       <div class="search-inner">
         <span class="si">🔍</span>
         <input class="search-input" id="globalSearch" type="text"

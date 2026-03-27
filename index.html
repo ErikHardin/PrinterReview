@@ -107,11 +107,11 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .retry-btn{padding:12px 24px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-family:'Sora',sans-serif;font-size:14px;font-weight:700;cursor:pointer}
 
 /* HEADER */
-.header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 14px;position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:8px}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 10px;position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:6px}
 .hlogo{font-size:20px}
-.htitle{font-size:15px;font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.htitle{font-size:15px;font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
 .hbadge{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--accent-dim);color:var(--accent);padding:3px 8px;border-radius:20px;border:1px solid var(--accent);white-space:nowrap}
-.hbtn{padding:5px 10px;border-radius:7px;border:1px solid var(--border2);background:transparent;font-family:'Sora',sans-serif;font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;white-space:nowrap;transition:all .15s}
+.hbtn{padding:5px 8px;border-radius:7px;border:1px solid var(--border2);background:transparent;font-family:'Sora',sans-serif;font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;white-space:nowrap;transition:all .15s}
 .hbtn:active{background:var(--surface3)}
 .hbtn.green{border-color:var(--keep-border);color:var(--keep)}
 .hbtn.purple{border-color:var(--conflict-border);color:var(--conflict)}
@@ -453,7 +453,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
       <span class="hlogo">🖨️</span>
       <span class="htitle" id="hTitle">Printer Review</span>
       <button class="hbtn green"   onclick="exportCSV()">CSV</button>
-      <button class="hbtn admin-btn" id="btnAdmin" onclick="openAdmin()" style="display:none">&#x1F464; Users</button>
+      <button class="hbtn admin-btn" id="btnAdmin" onclick="openAdmin()" style="display:none">&#x1F464;</button>
       <button class="hbtn" id="btnSummary" onclick="toggleSummary()">&#x1F4CA;</button>
       <button class="hbtn purple"  id="conflictBtn" onclick="toggleConflictFilter()" style="display:none">⚠ Conflicts</button>
       <button class="hbtn"         onclick="openDlg('changePinDlg')">🔑</button>

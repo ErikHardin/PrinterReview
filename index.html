@@ -238,10 +238,12 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .sel-repl.show{display:block}
 .sel-repl-m{font-size:13px;font-weight:700;color:var(--keep)}
 .sel-repl-s{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text2);margin-top:2px}
-.modal-scroll{overflow-y:scroll;-webkit-overflow-scrolling:touch;flex:1 1 auto;min-height:0;overscroll-behavior:contain}
-.mfooter{flex:0 0 auto;padding:12px 18px;padding-bottom:max(calc(env(safe-area-inset-bottom,0px) + 12px),16px);display:flex;gap:8px;background:var(--surface);border-top:1px solid var(--border)}
-.scroll-hint{text-align:center;padding:6px;font-size:11px;color:var(--text3);display:none}
-.scroll-hint.show{display:block}
+.modal-scroll{overflow-y:scroll;-webkit-overflow-scrolling:touch;flex:1 1 auto;min-height:0;overscroll-behavior:contain;padding-bottom:8px}
+.mfooter{display:none}
+.action-bar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:999;background:var(--surface);border-top:2px solid var(--border2);padding:12px 16px;padding-bottom:max(calc(env(safe-area-inset-bottom,0px) + 12px),16px);gap:10px;flex-direction:column}
+.action-bar.open{display:flex}
+.action-bar-dec{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.action-bar-save{display:flex;gap:8px}
 .btn-cancel{flex:0 0 auto;padding:12px 16px;border-radius:10px;border:1.5px solid var(--border2);background:transparent;font-family:'Sora',sans-serif;font-size:14px;font-weight:600;cursor:pointer;color:var(--text2)}
 .btn-save{flex:1;padding:12px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-family:'Sora',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .15s}
 .btn-save:disabled{opacity:.25}
@@ -419,10 +421,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
         <div id="conflictRows"></div>
       </div>
       <div class="msec">Your Decision</div>
-      <div class="dec-btns">
-        <button class="dec-btn" id="btnKeep"   onclick="selDec('keep')">  <span class="di">✅</span>Keep It</button>
-        <button class="dec-btn" id="btnRetire" onclick="selDec('retire')"><span class="di">🗑️</span>Retire It</button>
-      </div>
+      <div style="height:4px"></div><!-- decisions moved to action bar -->
       <div class="secure-print-wrap" id="securePrintWrap">
         <div class="secure-check" id="secureCheck" onclick="toggleSecurePrint()">
           <div class="secure-check-box" id="secureCheckBox"></div>
@@ -446,13 +445,20 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
         </div>
       </div>
       </div><!-- /modal-scroll -->
-      <div class="scroll-hint" id="scrollHint">▼ Scroll down for Save button</div>
-      <div class="mfooter">
-        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-        <button class="btn-save" id="btnSave" onclick="saveDec()" disabled>Save Decision</button>
-      </div>
     </div>
   </div>
+
+<!-- Permanent action bar - always visible above Safari toolbar -->
+<div class="action-bar" id="actionBar">
+  <div class="action-bar-dec">
+    <button class="dec-btn" id="btnKeep"   onclick="selDec('keep')">  <span class="di">✅</span>Keep It</button>
+    <button class="dec-btn" id="btnRetire" onclick="selDec('retire')"><span class="di">🗑️</span>Retire It</button>
+  </div>
+  <div class="action-bar-save">
+    <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+    <button class="btn-save" id="btnSave" onclick="saveDec()" disabled>Save Decision</button>
+  </div>
+</div>
 
 </div><!-- /appRoot -->
 
@@ -865,10 +871,12 @@ function openModal(id){
   document.getElementById('replSec').classList.toggle('show',pendingDec==='retire'&&!securePrint);
   renderPicker('');refreshSelRepl();refreshDecBtns();
   setModalHeight();
-  document.getElementById('overlay').classList.add('open');document.body.style.overflow='hidden';
-  setTimeout(checkScrollHint,150);
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('actionBar').classList.add('open');
+  document.body.style.overflow='hidden';
+
 }
-function closeModal(){document.getElementById('overlay').classList.remove('open');document.body.style.overflow='';activeId=null;pendingDec=null;selReplId=null;_scrollListenerAdded=false;const ms=document.querySelector('.modal-scroll');if(ms)ms.scrollTop=0;}
+function closeModal(){document.getElementById('overlay').classList.remove('open');document.getElementById('actionBar').classList.remove('open');document.body.style.overflow='';activeId=null;pendingDec=null;selReplId=null;_scrollListenerAdded=false;const ms=document.querySelector('.modal-scroll');if(ms)ms.scrollTop=0;}
 function selDec(v){pendingDec=v;if(v==='keep'){selReplId=null;securePrint=false;}document.getElementById('securePrintWrap').classList.toggle('show',v==='retire');document.getElementById('secureCheck').classList.toggle('checked',securePrint);document.getElementById('secureCheckBox').textContent=securePrint?'\u2713':'';document.getElementById('replSec').classList.toggle('show',v==='retire'&&!securePrint);if(v==='retire'&&!securePrint)renderPicker('');refreshSelRepl();refreshDecBtns();}
 function refreshDecBtns(){document.getElementById('btnKeep').className='dec-btn'+(pendingDec==='keep'?' sk':'');document.getElementById('btnRetire').className='dec-btn'+(pendingDec==='retire'?' sr':'');const ok=pendingDec==='keep'||(pendingDec==='retire'&&(securePrint||selReplId));document.getElementById('btnSave').disabled=!ok;}
 
@@ -944,27 +952,13 @@ function exportCSV(){
 //  BACKDROP
 // ══════════════════════════════════════════════════════════
 let _scrollListenerAdded=false;
-function checkScrollHint(){
-  const ms=document.querySelector('.modal-scroll');
-  const sh=document.getElementById('scrollHint');
-  if(!ms||!sh)return;
-  const overflows=ms.scrollHeight>ms.clientHeight+10;
-  const atBottom=ms.scrollTop+ms.clientHeight>=ms.scrollHeight-20;
-  sh.classList.toggle('show',overflows&&!atBottom);
-  if(!_scrollListenerAdded){
-    _scrollListenerAdded=true;
-    ms.addEventListener('scroll',()=>{
-      const ob=ms.scrollTop+ms.clientHeight>=ms.scrollHeight-20;
-      sh.classList.toggle('show',ms.scrollHeight>ms.clientHeight+10&&!ob);
-    });
-  }
-}
 function setModalHeight(){
   const modal=document.getElementById('theModal');
   if(!modal)return;
   // Use visualViewport if available (handles Safari toolbar correctly)
   const vh=window.visualViewport?window.visualViewport.height:window.innerHeight;
-  modal.style.maxHeight=Math.floor(vh*0.88)+'px';
+  const barH=document.getElementById('actionBar').offsetHeight||160;
+  modal.style.maxHeight=Math.floor(vh-barH)+'px';
 }
 // Re-set height when visual viewport changes (Safari toolbar show/hide)
 if(window.visualViewport){

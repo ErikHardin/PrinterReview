@@ -496,6 +496,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
         <div class="dchip"><div class="dchip-l">Avg Pages/mo</div> <div class="dchip-v" id="mPages"></div></div>
         <div class="dchip"><div class="dchip-l">Epic Trays</div>     <div class="dchip-v" id="mEpic"></div></div>
         <div class="dchip"><div class="dchip-l">Serial #</div>         <div class="dchip-v" id="mSerial"></div></div>
+        <div class="dchip"><div class="dchip-l">Lease End</div>       <div class="dchip-v" id="mLeaseEnd"></div></div>
       </div>
       <!-- Conflict panel (shown when multiple reviewers disagree) -->
       <div class="conflict-panel" id="conflictPanel" style="display:none">
@@ -643,7 +644,7 @@ function setSyncStatus(state) {
 // ══════════════════════════════════════════════════════════
 //  LOAD PRINTERS FROM GITHUB
 // ══════════════════════════════════════════════════════════
-const CM={institute:['institute','institution','owninggroup','owner'],dept:['department','dept'],building:['building','bldg'],floor:['floor','flr'],room:['room','roomnumber','room number'],model:['model','printermodel'],dnumber:['dnumber','d number','dnum','d#','printerid'],bnumber:['bnumber','b number','bnum','b#','vendorid'],avgPages:['avgpagesprinted','avgpages','averagepages','monthlyavg','avg pages'],epic:['epic','epictrays','epic trays','epic count'],serial:['serial','serialnumber','serial number','serialno','serial no']};
+const CM={institute:['institute','institution','owninggroup','owner'],dept:['department','dept'],building:['building','bldg'],floor:['floor','flr'],room:['room','roomnumber','room number'],model:['model','printermodel'],dnumber:['dnumber','d number','dnum','d#','printerid'],bnumber:['bnumber','b number','bnum','b#','vendorid'],avgPages:['avgpagesprinted','avgpages','averagepages','monthlyavg','avg pages'],epic:['epic','epictrays','epic trays','epic count'],serial:['serial','serialnumber','serial number','serialno','serial no'],leaseEnd:['leaseend','lease end','leaseenddate','lease end date','lease']};
 const nk=s=>String(s).toLowerCase().replace(/[\s_\-\.]/g,'');
 
 async function loadPrinters() {
@@ -661,7 +662,7 @@ async function loadPrinters() {
     if (miss.length) throw new Error('Could not find columns: ' + miss.join(', '));
     const g = (row,f) => cm[f]!==undefined ? String(row[cm[f]]||'').trim() : '';
     const loaded = [];
-    rows.slice(1).forEach((row,i)=>{const m=g(row,'model');if(!m)return;const epicVal=cm['epic']!==undefined?parseFloat(g(row,'epic'))||0:0;loaded.push({id:i+1,institute:g(row,'institute'),dept:g(row,'dept'),building:g(row,'building'),floor:g(row,'floor'),room:g(row,'room'),model:m,dnumber:g(row,'dnumber'),bnumber:g(row,'bnumber'),avgPages:parseFloat(g(row,'avgPages'))||0,epic:epicVal,serial:g(row,'serial')});});
+    rows.slice(1).forEach((row,i)=>{const m=g(row,'model');if(!m)return;const epicVal=cm['epic']!==undefined?parseFloat(g(row,'epic'))||0:0;loaded.push({id:i+1,institute:g(row,'institute'),dept:g(row,'dept'),building:g(row,'building'),floor:g(row,'floor'),room:g(row,'room'),model:m,dnumber:g(row,'dnumber'),bnumber:g(row,'bnumber'),avgPages:parseFloat(g(row,'avgPages'))||0,epic:epicVal,serial:g(row,'serial'),leaseEnd:g(row,'leaseEnd')});});
     if (!loaded.length) throw new Error('No printer rows found in printers.xlsx.');
     printers = loaded;
     subscribeToDecisions();
@@ -898,7 +899,7 @@ function renderList(){
     if(allDecs.length){
       rev=`<div class="prow-reviewers">👤 ${allDecs.map(d=>d.reviewer).join(', ')}</div>`;
     }
-    row.innerHTML=`<div class="prow-top"><div class="prow-main"><div class="prow-ids">${p.dnumber} · ${p.bnumber}</div>${p.serial?`<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:.03em;margin-bottom:2px">S/N: ${p.serial}</div>`:''}<div class="prow-model">${p.model}</div><div class="prow-loc">${[p.dept,p.room?'Rm '+p.room:''].filter(Boolean).join(' · ')}</div>${rn}${rev}</div><span class="sbadge ${bc}">${bt}</span></div><div class="prow-meta"><span>Fl ${fmtFloor(p.floor)}</span><span class="${hi(p.avgPages)?'mw':''}">📄 ${fmt(p.avgPages)}/mo${hi(p.avgPages)?' ⚠️':''}</span>${p.epic>0?'<span class="epic-yes">EPIC '+p.epic+'</span>':''}</div>`;
+    row.innerHTML=`<div class="prow-top"><div class="prow-main"><div class="prow-ids">${p.dnumber} · ${p.bnumber}</div>${p.serial?`<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:.03em;margin-bottom:2px">S/N: ${p.serial}</div>`:''}<div class="prow-model">${p.model}</div><div class="prow-loc">${[p.dept,p.room?'Rm '+p.room:''].filter(Boolean).join(' · ')}</div>${rn}${rev}</div><span class="sbadge ${bc}">${bt}</span></div><div class="prow-meta"><span>Fl ${fmtFloor(p.floor)}</span><span class="${hi(p.avgPages)?'mw':''}">📄 ${fmt(p.avgPages)}/mo${hi(p.avgPages)?' ⚠️':''}</span>${p.epic>0?'<span class="epic-yes">EPIC '+p.epic+'</span>':''}${p.leaseEnd&&p.leaseEnd!=='N/A'&&p.leaseEnd!==''?'<span style="color:var(--warn);font-weight:600">📋 Lease: '+p.leaseEnd+'</span>':''}</div>`;
     list.appendChild(row);
   });
   if(more>0){const note=document.createElement('div');note.className='empty-state';note.style.padding='16px';note.innerHTML=`<div style="font-size:13px;color:var(--text3)">+${more.toLocaleString()} more — use filters or search to narrow down.</div>`;list.appendChild(note);}
@@ -933,6 +934,7 @@ function openModal(id){
   const mp=document.getElementById('mPages');mp.textContent=fmt(p.avgPages)+'/mo';mp.className='dchip-v'+(hi(p.avgPages)?' w':'');
   const epicEl=document.getElementById('mEpic');epicEl.textContent=p.epic>0?p.epic+' tray'+(p.epic!==1?'s':''):'None';epicEl.style.color=p.epic>0?'var(--accent)':'';
   document.getElementById('mSerial').textContent=p.serial||'—';
+  const leEl=document.getElementById('mLeaseEnd');leEl.textContent=p.leaseEnd||'—';leEl.style.color=(p.leaseEnd&&p.leaseEnd!=='N/A'&&p.leaseEnd!=='')?'var(--warn)':'';
 
   // Conflict panel
   const allDecs=getDecisionsFor(id);
@@ -1006,7 +1008,7 @@ function renderPicker(q){
   const hits=q2?cands.filter(x=>[x.dnumber,x.bnumber,x.model,x.room,x.dept].some(v=>String(v||'').toLowerCase().includes(q2))):cands.slice(0,50);
   if(!hits.length){list.innerHTML='<div class="pi-empty">No other printers on this floor.</div>';return;}
   list.innerHTML='';
-  hits.forEach(x=>{const item=document.createElement('div');item.className='pi'+(x.id===selReplId?' sel':'');item.innerHTML=`<div class="pi-dot"></div><div><div class="pi-model">${x.model}</div><div class="pi-meta">${x.dnumber} · ${x.bnumber} · Rm ${x.room} · ${fmt(x.avgPages)}/mo</div></div>`;item.onclick=()=>{selReplId=selReplId===x.id?null:x.id;renderPicker(document.getElementById('srchIn').value);refreshSelRepl();refreshDecBtns();};list.appendChild(item);});
+  hits.forEach(x=>{const item=document.createElement('div');item.className='pi'+(x.id===selReplId?' sel':'');item.innerHTML=`<div class="pi-dot"></div><div><div class="pi-model">${x.model}</div><div class="pi-meta">${x.dnumber} · ${x.bnumber} · Rm ${x.room} · ${fmt(x.avgPages)}/mo${x.leaseEnd&&x.leaseEnd!=='N/A'&&x.leaseEnd!==''?' · 📋 '+x.leaseEnd:''}</div></div>`;item.onclick=()=>{selReplId=selReplId===x.id?null:x.id;renderPicker(document.getElementById('srchIn').value);refreshSelRepl();refreshDecBtns();};list.appendChild(item);});
 }
 function refreshSelRepl(){const box=document.getElementById('selRepl');if(selReplId&&pendingDec==='retire'){const rp=printers.find(p=>p.id===selReplId);document.getElementById('selReplM').textContent='✓ '+rp.model;document.getElementById('selReplS').textContent=rp.dnumber+' · '+rp.bnumber+' · Rm '+rp.room;box.classList.add('show');}else box.classList.remove('show');}
 
@@ -1057,7 +1059,7 @@ function doReset(){
 //  EXPORT CSV (only decided printers, shows all reviewers)
 // ══════════════════════════════════════════════════════════
 function exportCSV(){
-  const rows=[['Reviewer','Institute','Department','Building','Floor','Room','Model','DNumber','BNumber','SerialNumber','AvgPagesPrinted','EpicTrays','Decision','DecisionDate','SecurePrint','ReplacementModel','ReplacementDNumber','ReplacementBNumber','Conflict']];
+  const rows=[['Reviewer','Institute','Department','Building','Floor','Room','Model','DNumber','BNumber','SerialNumber','LeaseEnd','AvgPagesPrinted','EpicTrays','Decision','DecisionDate','SecurePrint','ReplacementModel','ReplacementDNumber','ReplacementBNumber','Conflict']];
   printers.forEach(p=>{
     const decs=getDecisionsFor(p.id);
     if(!decs.length)return; // skip pending
@@ -1066,7 +1068,7 @@ function exportCSV(){
     const isConflict=hasConflict(p.id);
     const rp=d.replacementId?printers.find(x=>x.dnumber===d.replacementId):null;
     const decDate=d.ts?new Date(d.ts).toLocaleDateString('en-US',{year:'numeric',month:'2-digit',day:'2-digit'}):'';
-    rows.push([d.reviewer,p.institute,p.dept,p.building,p.floor,p.room,p.model,p.dnumber,p.bnumber,p.serial||'',p.avgPages,p.epic||0,d.status,decDate,d.securePrint?'YES':'',rp?.model||'',rp?.dnumber||'',rp?.bnumber||'',isConflict?'YES':'']);
+    rows.push([d.reviewer,p.institute,p.dept,p.building,p.floor,p.room,p.model,p.dnumber,p.bnumber,p.serial||'',p.leaseEnd||'',p.avgPages,p.epic||0,d.status,decDate,d.securePrint?'YES':'',rp?.model||'',rp?.dnumber||'',rp?.bnumber||'',isConflict?'YES':'']);
   });
   const csv=rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));

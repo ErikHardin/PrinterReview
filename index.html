@@ -1095,101 +1095,91 @@ function calcStats(ps){
 }
 function renderSummary(){
   const el = document.getElementById('summaryScreen');
-  if(!printers.length){
-    el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#555E7A;font-size:14px">No printer data loaded.</div>';
-    return;
-  }
-  const allBlds = blds();
-  const selBld = summaryBldFilter || 'All';
+  try {
+    if(!printers.length){
+      el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#555E7A;font-size:14px">No printer data loaded.</div>';
+      return;
+    }
+    const allBlds = blds();
+    const selBld = summaryBldFilter || 'All';
+    const bldsToShow = selBld==='All' ? allBlds : allBlds.filter(b=>b===selBld);
+    const autoExpand = selBld !== 'All';
 
-  // Build dropdown options
-  let opts = '<option value="All">All Buildings</option>';
-  allBlds.forEach(b => {
-    opts += '<option value="' + b.replace(/"/g,'&quot;') + '"' + (b===selBld?' selected':'') + '>' + b + '</option>';
-  });
-
-  // Build building rows
-  const bldsToShow = selBld==='All' ? allBlds : [selBld];
-  let rows = '';
-  bldsToShow.forEach(bld => {
-    const bp  = printers.filter(p => p.building === bld);
-    const bfl = [...new Set(bp.map(p=>p.floor))].sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true}));
-    const bs  = calcStats(bp);
-    const pct = bp.length ? Math.round(bs.decided/bp.length*100) : 0;
-    const sid = 'sb_' + bld.replace(/[^a-zA-Z0-9]/g,'_');
-
-    // Floor rows for this building
-    let floorRows = '';
-    bfl.forEach(fl => {
-      const fp  = bp.filter(p => String(p.floor)===String(fl));
-      const fs  = calcStats(fp);
-      const fpct= fp.length ? Math.round(fs.decided/fp.length*100) : 0;
-      const flLabel = fmtFloor(fl);
-
-      // Status bar segments (widths as % of floor total)
-      const kw  = fp.length ? Math.round(fs.keep/fp.length*100)     : 0;
-      const rw  = fp.length ? Math.round(fs.retire/fp.length*100)   : 0;
-      const nfw = fp.length ? Math.round(fs.notfound/fp.length*100) : 0;
-      const pw  = fp.length ? Math.round(fs.pending/fp.length*100)  : 0;
-
-      const flId = sid + '_fl_' + String(fl).replace(/[^a-zA-Z0-9]/g,'_');
-
-      const escapedBld = bld.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-      const escapedFl  = String(fl).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-      floorRows += '<div class="sum-floor-row" onclick="sumGoTo(\'' + escapedBld + '\',\'' + escapedFl + '\')">';
-      floorRows += '<div class="sum-floor-top">';
-      floorRows += '<span class="sum-floor-name">Floor ' + flLabel + '</span>';
-      floorRows += '<span class="sum-floor-pct">' + fpct + '%</span>';
-      floorRows += '</div>';
-      // Segmented bar
-      floorRows += '<div class="sum-bar">';
-      if(kw>0)  floorRows += '<div class="sum-seg sum-seg-k" style="width:'+kw+'%"></div>';
-      if(rw>0)  floorRows += '<div class="sum-seg sum-seg-r" style="width:'+rw+'%"></div>';
-      if(nfw>0) floorRows += '<div class="sum-seg sum-seg-n" style="width:'+nfw+'%"></div>';
-      if(pw>0)  floorRows += '<div class="sum-seg sum-seg-p" style="width:'+pw+'%"></div>';
-      floorRows += '</div>';
-      // Counts
-      floorRows += '<div class="sum-floor-counts">';
-      floorRows += '<span class="sum-count">' + fp.length + ' total</span>';
-      if(fs.pending>0)  floorRows += '<span class="sum-count sum-c-p">' + fs.pending + ' pending</span>';
-      if(fs.keep>0)     floorRows += '<span class="sum-count sum-c-k">Keep: ' + fs.keep + '</span>';
-      if(fs.retire>0)   floorRows += '<span class="sum-count sum-c-r">Retire: ' + fs.retire + '</span>';
-      if(fs.notfound>0) floorRows += '<span class="sum-count sum-c-n">Not Found: ' + fs.notfound + '</span>';
-      if(fs.conflict>0) floorRows += '<span class="sum-count sum-c-c">Conflicts: ' + fs.conflict + '</span>';
-      floorRows += '</div>';
-      floorRows += '</div>';
+    // Dropdown
+    let opts = '<option value="All">All Buildings</option>';
+    allBlds.forEach(function(b){
+      opts += '<option value="' + b.replace(/"/g,'&quot;') + '"' + (b===selBld?' selected':'') + '>' + b + '</option>';
     });
 
-    const expanded = selBld !== 'All' ? 'open' : '';
-    rows += '<div class="sum-bld-card">';
-    rows += '<div class="sum-bld-hdr" data-sid="' + sid + '" onclick="var s=this.dataset.sid;document.getElementById(s).classList.toggle(\'open\');document.getElementById(\'arr_\'+s).classList.toggle(\'open\')">';
-    rows += '<div style="flex:1"><div class="sum-bld-name">' + bld + ' <span style="font-weight:400;font-size:12px;color:var(--text3)">(' + bp.length + ')</span></div>';
-    rows += '<div class="sum-bld-pills">';
-    rows += '<span class="sum-count">' + bp.length + ' total</span>';
-    if(bs.pending>0)  rows += '<span class="sum-count sum-c-p">' + bs.pending + ' pending</span>';
-    if(bs.keep>0)     rows += '<span class="sum-count sum-c-k">Keep: ' + bs.keep + '</span>';
-    if(bs.retire>0)   rows += '<span class="sum-count sum-c-r">Retire: ' + bs.retire + '</span>';
-    if(bs.notfound>0) rows += '<span class="sum-count sum-c-n">Not Found: ' + bs.notfound + '</span>';
-    if(bs.conflict>0) rows += '<span class="sum-count sum-c-c">Conflicts: ' + bs.conflict + '</span>';
-    rows += '</div></div>';
-    rows += '<span style="font-family:JetBrains Mono,monospace;font-size:13px;font-weight:700;margin:0 8px">' + pct + '%</span>';
-    rows += '<span class="summary-bld-arrow ' + expanded + '" id="arr_' + sid + '">▼</span>';
-    rows += '</div>';
-    rows += '<div class="summary-bld-bar"><div class="summary-bld-fill" style="width:'+pct+'%"></div></div>';
-    rows += '<div class="summary-floors ' + expanded + '" id="' + sid + '">' + floorRows + '</div>';
-    rows += '</div>';
-  });
+    let html = '<div style="font-size:17px;font-weight:700;color:var(--text);padding:0 2px 12px">&#x1F4CA; Building Summary</div>';
+    html += '<div class="bld-select-wrap" style="margin-bottom:14px"><select class="bld-select" onchange="summaryBldFilter=this.value;renderSummary()">' + opts + '</select><span class="bld-arrow">&#9660;</span></div>';
+    html += '<div class="sum-legend"><span class="sum-leg-item"><span class="sum-leg-dot" style="background:var(--keep)"></span>Keep</span><span class="sum-leg-item"><span class="sum-leg-dot" style="background:var(--retire)"></span>Retire</span><span class="sum-leg-item"><span class="sum-leg-dot" style="background:var(--text3)"></span>Not Found</span><span class="sum-leg-item"><span class="sum-leg-dot" style="background:var(--border2)"></span>Pending</span></div>';
 
-  el.innerHTML =
-    '<div style="font-size:17px;font-weight:700;color:var(--text);padding:0 2px 12px">📊 Building Summary</div>' +
-    '<div class="bld-select-wrap" style="margin-bottom:14px"><select class="bld-select" onchange="summaryBldFilter=this.value;renderSummary()">' +
-    opts + '</select><span class="bld-arrow">▼</span></div>' +
-    '<div class="sum-legend"><span class="sum-leg-item"><span class="sum-leg-dot" style="background:var(--keep)"></span>Keep</span>' +
-    '<span class="sum-leg-item"><span class="sum-leg-dot" style="background:var(--retire)"></span>Retire</span>' +
-    '<span class="sum-leg-item"><span class="sum-leg-dot" style="background:var(--text3)"></span>Not Found</span>' +
-    '<span class="sum-leg-item"><span class="sum-leg-dot" style="background:var(--border2)"></span>Pending</span></div>' +
-    rows;
+    bldsToShow.forEach(function(bld){
+      var bp  = printers.filter(function(p){ return p.building === bld; });
+      var bfl = Array.from(new Set(bp.map(function(p){ return p.floor; }))).sort(function(a,b){ return String(a).localeCompare(String(b),undefined,{numeric:true}); });
+      var bs  = calcStats(bp);
+      var pct = bp.length ? Math.round(bs.decided/bp.length*100) : 0;
+      var sid = 'sb' + bld.replace(/[^a-zA-Z0-9]/g,'_');
+      var flOpen = autoExpand ? ' open' : '';
+
+      html += '<div class="sum-bld-card">';
+      html += '<div class="sum-bld-hdr" data-sid="' + sid + '" onclick="var s=this.getAttribute(&quot;data-sid&quot;);document.getElementById(s).classList.toggle(&quot;open&quot;);document.getElementById(&quot;arr&quot;+s).classList.toggle(&quot;open&quot;)">';
+      html += '<div style="flex:1">';
+      html += '<div class="sum-bld-name">' + bld + ' <span style="font-weight:400;font-size:12px;color:var(--text3)">(' + bp.length + ')</span></div>';
+      html += '<div class="sum-bld-pills">';
+      html += '<span class="sum-count">' + bp.length + ' total</span>';
+      if(bs.pending>0)  html += '<span class="sum-count sum-c-p">' + bs.pending + ' pending</span>';
+      if(bs.keep>0)     html += '<span class="sum-count sum-c-k">Keep: ' + bs.keep + '</span>';
+      if(bs.retire>0)   html += '<span class="sum-count sum-c-r">Retire: ' + bs.retire + '</span>';
+      if(bs.notfound>0) html += '<span class="sum-count sum-c-n">Not Found: ' + bs.notfound + '</span>';
+      if(bs.conflict>0) html += '<span class="sum-count sum-c-c">Conflicts: ' + bs.conflict + '</span>';
+      html += '</div></div>';
+      html += '<span style="font-family:JetBrains Mono,monospace;font-size:13px;font-weight:700;margin:0 8px">' + pct + '%</span>';
+      html += '<span class="summary-bld-arrow' + flOpen + '" id="arr' + sid + '">&#9660;</span>';
+      html += '</div>';
+      html += '<div class="summary-bld-bar"><div class="summary-bld-fill" style="width:' + pct + '%"></div></div>';
+      html += '<div class="summary-floors' + flOpen + '" id="' + sid + '">';
+
+      bfl.forEach(function(fl){
+        var fp   = bp.filter(function(p){ return String(p.floor)===String(fl); });
+        var fs   = calcStats(fp);
+        var fpct = fp.length ? Math.round(fs.decided/fp.length*100) : 0;
+        var kw   = fp.length ? Math.round(fs.keep/fp.length*100)     : 0;
+        var rw   = fp.length ? Math.round(fs.retire/fp.length*100)   : 0;
+        var nfw  = fp.length ? Math.round(fs.notfound/fp.length*100) : 0;
+        var pw   = fp.length ? Math.round(fs.pending/fp.length*100)  : 0;
+        var flLabel = fmtFloor(fl);
+        var eBld = bld.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        var eFl  = String(fl).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+
+        html += '<div class="sum-floor-row" data-bld="' + bld.replace(/"/g,'&quot;') + '" data-fl="' + String(fl).replace(/"/g,'&quot;') + '" onclick="sumGoTo(this.dataset.bld,this.dataset.fl)">';
+        html += '<div class="sum-floor-top"><span class="sum-floor-name">Floor ' + flLabel + '</span><span class="sum-floor-pct">' + fpct + '%</span></div>';
+        html += '<div class="sum-bar">';
+        if(kw>0)  html += '<div class="sum-seg sum-seg-k" style="width:' + kw  + '%"></div>';
+        if(rw>0)  html += '<div class="sum-seg sum-seg-r" style="width:' + rw  + '%"></div>';
+        if(nfw>0) html += '<div class="sum-seg sum-seg-n" style="width:' + nfw + '%"></div>';
+        if(pw>0)  html += '<div class="sum-seg sum-seg-p" style="width:' + pw  + '%"></div>';
+        html += '</div>';
+        html += '<div class="sum-floor-counts">';
+        html += '<span class="sum-count">' + fp.length + ' total</span>';
+        if(fs.pending>0)  html += '<span class="sum-count sum-c-p">' + fs.pending + ' pending</span>';
+        if(fs.keep>0)     html += '<span class="sum-count sum-c-k">Keep: ' + fs.keep + '</span>';
+        if(fs.retire>0)   html += '<span class="sum-count sum-c-r">Retire: ' + fs.retire + '</span>';
+        if(fs.notfound>0) html += '<span class="sum-count sum-c-n">Not Found: ' + fs.notfound + '</span>';
+        if(fs.conflict>0) html += '<span class="sum-count sum-c-c">Conflict: ' + fs.conflict + '</span>';
+        html += '</div></div>';
+      });
+
+      html += '</div></div>';
+    });
+
+    el.innerHTML = html;
+  } catch(err) {
+    el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#FF5B5B;font-size:13px">Error rendering summary: ' + err.message + '</div>';
+  }
 }
+
 function sumGoTo(bld, fl){
   summaryOpen = false;
   toggleSummary();

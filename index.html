@@ -257,8 +257,32 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .btn-save:disabled{opacity:.25}
 .btn-save:not(:disabled):active{opacity:.8}
 .empty-state{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px}
-.summary-screen{display:none;position:fixed;top:56px;left:0;right:0;bottom:0;z-index:98;background:var(--bg);overflow-y:auto;padding:12px 12px 80px 12px;animation:fadeIn .2s ease}
-.summary-screen.open{display:block}
+.sum-bld-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden}
+.sum-bld-hdr{padding:12px 14px;display:flex;align-items:center;cursor:pointer;user-select:none;-webkit-user-select:none}
+.sum-bld-name{font-size:14px;font-weight:700}
+.sum-bld-pills{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+.sum-floor-row{padding:10px 14px 10px 22px;border-top:1px solid var(--border);cursor:pointer;transition:background .15s}
+.sum-floor-row:active{background:var(--surface2)}
+.sum-floor-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.sum-floor-name{font-size:13px;font-weight:600;color:var(--text)}
+.sum-floor-pct{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3)}
+.sum-bar{height:8px;background:var(--surface3);border-radius:4px;overflow:hidden;display:flex;margin-bottom:6px}
+.sum-seg{height:100%;transition:width .4s ease}
+.sum-seg-k{background:var(--keep)}
+.sum-seg-r{background:var(--retire)}
+.sum-seg-n{background:var(--text3)}
+.sum-seg-p{background:var(--border2)}
+.sum-floor-counts{display:flex;gap:5px;flex-wrap:wrap}
+.sum-count{font-size:10px;font-weight:600;padding:2px 6px;border-radius:8px;background:var(--surface3);color:var(--text2)}
+.sum-c-p{background:var(--surface3);color:var(--text2)}
+.sum-c-k{background:var(--keep-bg);color:var(--keep)}
+.sum-c-r{background:var(--retire-bg);color:var(--retire)}
+.sum-c-n{background:var(--surface3);color:var(--text3)}
+.sum-c-c{background:var(--conflict-bg);color:var(--conflict)}
+.sum-legend{display:flex;gap:12px;padding:0 2px 12px;flex-wrap:wrap}
+.sum-leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
+.sum-leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.summary-screen{display:none;padding:12px 12px 80px}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .summary-bld{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden}
 .summary-bld-hdr{padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
@@ -1029,17 +1053,31 @@ let summaryOpen = false;
 let summaryBldFilter = 'All';
 function toggleSummary(){
   summaryOpen = !summaryOpen;
-  document.getElementById('summaryScreen').classList.toggle('open', summaryOpen);
-  document.getElementById('printerList').style.display   = summaryOpen ? 'none'  : 'flex';
-  document.getElementById('filterSection').style.display  = summaryOpen ? 'none'  : 'flex';
-  document.getElementById('searchWrap').style.display     = summaryOpen ? 'none'  : 'block';
-  document.getElementById('progressWrap').style.display   = summaryOpen ? 'none'  : 'block';
-  document.getElementById('syncBar').style.display        = summaryOpen ? 'none'  : 'flex';
   const btn = document.getElementById('btnSummary');
-  btn.style.background  = summaryOpen ? 'var(--accent-dim)' : '';
-  btn.style.borderColor = summaryOpen ? 'var(--accent)' : '';
-  btn.style.color       = summaryOpen ? 'var(--accent)' : '';
-  if (summaryOpen) { window.scrollTo(0,0); renderSummary(); }
+  if(summaryOpen){
+    // Hide main content
+    document.getElementById('printerList').style.display   = 'none';
+    document.getElementById('filterSection').style.display = 'none';
+    document.getElementById('searchWrap').style.display    = 'none';
+    document.getElementById('progressWrap').style.display  = 'none';
+    document.getElementById('syncBar').style.display       = 'none';
+    document.getElementById('summaryScreen').style.display = 'block';
+    btn.style.background  = 'var(--accent-dim)';
+    btn.style.borderColor = 'var(--accent)';
+    btn.style.color       = 'var(--accent)';
+    renderSummary();
+  } else {
+    // Show main content
+    document.getElementById('printerList').style.display   = 'flex';
+    document.getElementById('filterSection').style.display = 'flex';
+    document.getElementById('searchWrap').style.display    = 'block';
+    document.getElementById('progressWrap').style.display  = 'block';
+    document.getElementById('syncBar').style.display       = 'flex';
+    document.getElementById('summaryScreen').style.display = 'none';
+    btn.style.background  = '';
+    btn.style.borderColor = '';
+    btn.style.color       = '';
+  }
 }
 function calcStats(ps){
   let keep=0,retire=0,notfound=0,conflict=0;
@@ -1055,92 +1093,107 @@ function calcStats(ps){
   const decided=keep+retire+notfound+conflict;
   return{keep,retire,notfound,conflict,pending:ps.length-decided,decided};
 }
-function renderSummary(filterBld){
-  const screen = document.getElementById('summaryScreen');
+function renderSummary(){
+  const el = document.getElementById('summaryScreen');
   if(!printers.length){
-    screen.innerHTML='<div class="empty-state"><div class="empty-icon">📊</div>No data loaded yet.</div>';
+    el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#555E7A;font-size:14px">No printer data loaded.</div>';
     return;
   }
   const allBlds = blds();
-  const activeBld = filterBld || summaryBldFilter || 'All';
-  const bldsToShow = activeBld==='All' ? allBlds : allBlds.filter(b=>b===activeBld);
-  const autoExpand = activeBld !== 'All';
+  const selBld = summaryBldFilter || 'All';
 
-  let html = `
-    <div style="font-size:16px;font-weight:700;color:var(--text);padding:4px 2px 12px">📊 Building Summary</div>
-    <div class="bld-select-wrap" style="margin-bottom:14px">
-      <select class="bld-select" id="summaryBldSelect" onchange="summaryBldFilter=this.value;renderSummary(this.value)">
-        <option value="All">All Buildings</option>
-        ${allBlds.map(b=>`<option value="${b.replace(/"/g,'&quot;')}" ${b===activeBld?'selected':''}>${b}</option>`).join('')}
-      </select>
-      <span class="bld-arrow">▼</span>
-    </div>`;
+  // Build dropdown options
+  let opts = '<option value="All">All Buildings</option>';
+  allBlds.forEach(b => {
+    opts += '<option value="' + b.replace(/"/g,'&quot;') + '"' + (b===selBld?' selected':'') + '>' + b + '</option>';
+  });
 
+  // Build building rows
+  const bldsToShow = selBld==='All' ? allBlds : [selBld];
+  let rows = '';
   bldsToShow.forEach(bld => {
     const bp  = printers.filter(p => p.building === bld);
     const bfl = [...new Set(bp.map(p=>p.floor))].sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true}));
     const bs  = calcStats(bp);
     const pct = bp.length ? Math.round(bs.decided/bp.length*100) : 0;
-    const sid = bld.replace(/[^a-z0-9]/gi,'_');
+    const sid = 'sb_' + bld.replace(/[^a-zA-Z0-9]/g,'_');
 
-    html += `<div class="summary-bld">
-      <div class="summary-bld-hdr" onclick="
-        var f=document.getElementById('floors-${sid}');
-        var a=document.getElementById('arrow-${sid}');
-        f.classList.toggle('open');a.classList.toggle('open');">
-        <div style="flex:1">
-          <div class="summary-bld-name">${bld}</div>
-          <div style="display:flex;gap:5px;margin-top:5px;flex-wrap:wrap">
-            <span class="stat-pill" style="background:var(--surface3);color:var(--text2);border:1px solid var(--border2)">${bp.length} total</span>
-            ${bs.pending>0  ? `<span class="stat-pill sp-pending">${bs.pending} pending</span>`    : ''}
-            ${bs.keep>0     ? `<span class="stat-pill sp-keep">Keep: ${bs.keep}</span>`            : ''}
-            ${bs.retire>0   ? `<span class="stat-pill sp-retire">Retire: ${bs.retire}</span>`      : ''}
-            ${bs.notfound>0 ? `<span class="stat-pill sp-nf">Not Found: ${bs.notfound}</span>`     : ''}
-            ${bs.conflict>0 ? `<span class="stat-pill sp-conflict">Conflicts: ${bs.conflict}</span>`: ''}
-          </div>
-        </div>
-        <div style="flex-shrink:0;margin-left:8px;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700">${pct}%</div>
-        <span class="summary-bld-arrow ${autoExpand?'open':''}" id="arrow-${sid}">▼</span>
-      </div>
-      <div class="summary-bld-bar"><div class="summary-bld-fill" style="width:${pct}%"></div></div>
-      <div class="summary-floors ${autoExpand?'open':''}" id="floors-${sid}">`;
-
+    // Floor rows for this building
+    let floorRows = '';
     bfl.forEach(fl => {
       const fp  = bp.filter(p => String(p.floor)===String(fl));
       const fs  = calcStats(fp);
-      const fp2 = fp.length ? Math.round(fs.decided/fp.length*100) : 0;
+      const fpct= fp.length ? Math.round(fs.decided/fp.length*100) : 0;
       const flLabel = fmtFloor(fl);
-      html += `<div class="summary-floor" onclick="
-        summaryOpen=false;
-        document.getElementById('summaryScreen').classList.remove('open');
-        document.getElementById('printerList').style.display='flex';
-        document.getElementById('filterSection').style.display='flex';
-        document.getElementById('searchWrap').style.display='block';
-        document.getElementById('progressWrap').style.display='block';
-        document.getElementById('syncBar').style.display='flex';
-        var btn=document.getElementById('btnSummary');btn.style.background='';btn.style.borderColor='';btn.style.color='';
-        curBld='${bld.replace(/'/g,"\'")}';curFlr='${String(fl).replace(/'/g,"\'")}';statusFilter='all';
-        document.getElementById('bldSelect').value='${bld.replace(/'/g,"\'")}';
-        setStatusFilter('all');renderAll();">
-        <div style="flex:1">
-          <div class="summary-floor-name">Floor ${flLabel}</div>
-          <div style="display:flex;gap:5px;margin-top:4px;flex-wrap:wrap">
-            <span class="stat-pill" style="background:var(--surface3);color:var(--text2);border:1px solid var(--border2)">${fp.length} total</span>
-            ${fs.pending>0  ? `<span class="stat-pill sp-pending">${fs.pending} pending</span>`   : ''}
-            ${fs.keep>0     ? `<span class="stat-pill sp-keep">Keep: ${fs.keep}</span>`           : ''}
-            ${fs.retire>0   ? `<span class="stat-pill sp-retire">Retire: ${fs.retire}</span>`     : ''}
-            ${fs.notfound>0 ? `<span class="stat-pill sp-nf">Not Found: ${fs.notfound}</span>`    : ''}
-            ${fs.conflict>0 ? `<span class="stat-pill sp-conflict">Conflict: ${fs.conflict}</span>`: ''}
-          </div>
-        </div>
-        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);flex-shrink:0;margin-left:8px">${fp2}%</span>
-      </div>`;
+
+      // Status bar segments (widths as % of floor total)
+      const kw  = fp.length ? Math.round(fs.keep/fp.length*100)     : 0;
+      const rw  = fp.length ? Math.round(fs.retire/fp.length*100)   : 0;
+      const nfw = fp.length ? Math.round(fs.notfound/fp.length*100) : 0;
+      const pw  = fp.length ? Math.round(fs.pending/fp.length*100)  : 0;
+
+      const flId = sid + '_fl_' + String(fl).replace(/[^a-zA-Z0-9]/g,'_');
+
+      floorRows += '<div class="sum-floor-row" onclick="sumGoTo('' + bld.replace(/'/g,"\'") + '','' + String(fl).replace(/'/g,"\'") + '')">';
+      floorRows += '<div class="sum-floor-top">';
+      floorRows += '<span class="sum-floor-name">Floor ' + flLabel + '</span>';
+      floorRows += '<span class="sum-floor-pct">' + fpct + '%</span>';
+      floorRows += '</div>';
+      // Segmented bar
+      floorRows += '<div class="sum-bar">';
+      if(kw>0)  floorRows += '<div class="sum-seg sum-seg-k" style="width:'+kw+'%"></div>';
+      if(rw>0)  floorRows += '<div class="sum-seg sum-seg-r" style="width:'+rw+'%"></div>';
+      if(nfw>0) floorRows += '<div class="sum-seg sum-seg-n" style="width:'+nfw+'%"></div>';
+      if(pw>0)  floorRows += '<div class="sum-seg sum-seg-p" style="width:'+pw+'%"></div>';
+      floorRows += '</div>';
+      // Counts
+      floorRows += '<div class="sum-floor-counts">';
+      floorRows += '<span class="sum-count">' + fp.length + ' total</span>';
+      if(fs.pending>0)  floorRows += '<span class="sum-count sum-c-p">' + fs.pending + ' pending</span>';
+      if(fs.keep>0)     floorRows += '<span class="sum-count sum-c-k">Keep: ' + fs.keep + '</span>';
+      if(fs.retire>0)   floorRows += '<span class="sum-count sum-c-r">Retire: ' + fs.retire + '</span>';
+      if(fs.notfound>0) floorRows += '<span class="sum-count sum-c-n">Not Found: ' + fs.notfound + '</span>';
+      if(fs.conflict>0) floorRows += '<span class="sum-count sum-c-c">Conflicts: ' + fs.conflict + '</span>';
+      floorRows += '</div>';
+      floorRows += '</div>';
     });
 
-    html += `</div></div>`;
+    const expanded = selBld !== 'All' ? 'open' : '';
+    rows += '<div class="sum-bld-card">';
+    rows += '<div class="sum-bld-hdr" onclick="document.getElementById('' + sid + '').classList.toggle('open');document.getElementById('arr_' + sid + '').classList.toggle('open')">';
+    rows += '<div style="flex:1"><div class="sum-bld-name">' + bld + ' <span style="font-weight:400;font-size:12px;color:var(--text3)">(' + bp.length + ')</span></div>';
+    rows += '<div class="sum-bld-pills">';
+    rows += '<span class="sum-count">' + bp.length + ' total</span>';
+    if(bs.pending>0)  rows += '<span class="sum-count sum-c-p">' + bs.pending + ' pending</span>';
+    if(bs.keep>0)     rows += '<span class="sum-count sum-c-k">Keep: ' + bs.keep + '</span>';
+    if(bs.retire>0)   rows += '<span class="sum-count sum-c-r">Retire: ' + bs.retire + '</span>';
+    if(bs.notfound>0) rows += '<span class="sum-count sum-c-n">Not Found: ' + bs.notfound + '</span>';
+    if(bs.conflict>0) rows += '<span class="sum-count sum-c-c">Conflicts: ' + bs.conflict + '</span>';
+    rows += '</div></div>';
+    rows += '<span style="font-family:JetBrains Mono,monospace;font-size:13px;font-weight:700;margin:0 8px">' + pct + '%</span>';
+    rows += '<span class="summary-bld-arrow ' + expanded + '" id="arr_' + sid + '">▼</span>';
+    rows += '</div>';
+    rows += '<div class="summary-bld-bar"><div class="summary-bld-fill" style="width:'+pct+'%"></div></div>';
+    rows += '<div class="summary-floors ' + expanded + '" id="' + sid + '">' + floorRows + '</div>';
+    rows += '</div>';
   });
 
-  screen.innerHTML = html;
+  el.innerHTML =
+    '<div style="font-size:17px;font-weight:700;color:var(--text);padding:0 2px 12px">📊 Building Summary</div>' +
+    '<div class="bld-select-wrap" style="margin-bottom:14px"><select class="bld-select" onchange="summaryBldFilter=this.value;renderSummary()">' +
+    opts + '</select><span class="bld-arrow">▼</span></div>' +
+    '<div class="sum-legend"><span class="sum-leg-item"><span class="sum-leg-dot" style="background:var(--keep)"></span>Keep</span>' +
+    '<span class="sum-leg-item"><span class="sum-leg-dot" style="background:var(--retire)"></span>Retire</span>' +
+    '<span class="sum-leg-item"><span class="sum-leg-dot" style="background:var(--text3)"></span>Not Found</span>' +
+    '<span class="sum-leg-item"><span class="sum-leg-dot" style="background:var(--border2)"></span>Pending</span></div>' +
+    rows;
+}
+function sumGoTo(bld, fl){
+  summaryOpen = false;
+  toggleSummary();
+  curBld = bld; curFlr = String(fl); statusFilter = 'all';
+  document.getElementById('bldSelect').value = bld;
+  setStatusFilter('all'); renderAll();
 }
 
 // ══════════════════════════════════════════════════════════

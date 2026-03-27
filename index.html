@@ -188,7 +188,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .modal{background:var(--surface);border-radius:20px 20px 0 0;border:1px solid var(--border2);border-bottom:none;position:fixed;bottom:0;left:0;right:0;width:100%;max-width:580px;margin:0 auto;z-index:201;animation:slideUp .2s cubic-bezier(.22,.68,0,1.2)}
 @keyframes slideUp{from{transform:translateY(50px);opacity:0}to{transform:translateY(0);opacity:1}}
 .mhandle{width:36px;height:3px;background:var(--border2);border-radius:2px;margin:12px auto 0}
-.modal-topbar{display:flex;align-items:center;gap:8px;padding:10px 16px 8px;border-bottom:1px solid var(--border)}
+.modal-topbar{display:flex;flex-direction:column;gap:0;padding:10px 16px 10px;border-bottom:1px solid var(--border)}
 .mhdr{padding:13px 18px 0}
 .mids{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:.05em}
 .mname{font-size:18px;font-weight:700;margin-top:3px;line-height:1.2}
@@ -239,7 +239,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .sel-repl.show{display:block}
 .sel-repl-m{font-size:13px;font-weight:700;color:var(--keep)}
 .sel-repl-s{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text2);margin-top:2px}
-.modal-scroll{overflow-y:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:24px;max-height:55vh;max-height:55svh}
+.modal-scroll{overflow-y:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:24px;max-height:60vh;max-height:60svh}
 
 .action-bar{display:none}
 
@@ -402,8 +402,14 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
     <div class="modal" id="theModal">
       <div class="mhandle"></div>
       <div class="modal-topbar">
-        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-        <button class="btn-save" id="btnSave" onclick="saveDec()" disabled style="flex:1">Save Decision</button>
+        <div style="display:flex;gap:8px;width:100%">
+          <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+          <button class="btn-save" id="btnSave" onclick="saveDec()" disabled style="flex:1">Save Decision</button>
+        </div>
+        <div class="dec-btns" style="width:100%;margin-top:8px">
+          <button class="dec-btn" id="btnKeep"   onclick="selDec('keep')"><span class="di">✅</span>Keep It</button>
+          <button class="dec-btn" id="btnRetire" onclick="selDec('retire')"><span class="di">🗑️</span>Retire It</button>
+        </div>
       </div>
       <div class="modal-scroll">
       <div class="mhdr">
@@ -426,10 +432,6 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
         <div id="conflictRows"></div>
       </div>
 
-      <div class="dec-btns" style="padding:12px 18px 0">
-        <button class="dec-btn" id="btnKeep"   onclick="selDec('keep')"><span class="di">✅</span>Keep It</button>
-        <button class="dec-btn" id="btnRetire" onclick="selDec('retire')"><span class="di">🗑️</span>Retire It</button>
-      </div>
       <div class="secure-print-wrap" id="securePrintWrap">
         <div class="secure-check" id="secureCheck" onclick="toggleSecurePrint()">
           <div class="secure-check-box" id="secureCheckBox"></div>

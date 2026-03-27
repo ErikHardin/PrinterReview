@@ -987,7 +987,7 @@ function refreshDecBtns(){document.getElementById('btnKeep').className='dec-btn'
 function filterPicker(){renderPicker(document.getElementById('srchIn').value);}
 function renderPicker(q){
   const list=document.getElementById('picker'),p=printers.find(x=>x.id===activeId),q2=q.trim().toLowerCase();
-  const cands=printers.filter(x=>x.id!==activeId&&x.building===p?.building&&String(x.floor)===String(p?.floor)).sort((a,b)=>String(a.room).localeCompare(String(b.room),undefined,{numeric:true}));
+  const cands=printers.filter(x=>{if(x.id===activeId)return false;if(x.building!==p?.building||String(x.floor)!==String(p?.floor))return false;const disp=getDisplayDecision(x.id);return disp===null||disp==='keep';}).sort((a,b)=>String(a.room).localeCompare(String(b.room),undefined,{numeric:true}));
   const hits=q2?cands.filter(x=>[x.dnumber,x.bnumber,x.model,x.room,x.dept].some(v=>String(v||'').toLowerCase().includes(q2))):cands.slice(0,50);
   if(!hits.length){list.innerHTML='<div class="pi-empty">No other printers on this floor.</div>';return;}
   list.innerHTML='';

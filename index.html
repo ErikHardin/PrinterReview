@@ -1134,7 +1134,9 @@ function renderSummary(){
 
       const flId = sid + '_fl_' + String(fl).replace(/[^a-zA-Z0-9]/g,'_');
 
-      floorRows += '<div class="sum-floor-row" onclick="sumGoTo('' + bld.replace(/'/g,"\'") + '','' + String(fl).replace(/'/g,"\'") + '')">';
+      const escapedBld = bld.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const escapedFl  = String(fl).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      floorRows += '<div class="sum-floor-row" onclick="sumGoTo(\'' + escapedBld + '\',\'' + escapedFl + '\')">';
       floorRows += '<div class="sum-floor-top">';
       floorRows += '<span class="sum-floor-name">Floor ' + flLabel + '</span>';
       floorRows += '<span class="sum-floor-pct">' + fpct + '%</span>';
@@ -1160,7 +1162,7 @@ function renderSummary(){
 
     const expanded = selBld !== 'All' ? 'open' : '';
     rows += '<div class="sum-bld-card">';
-    rows += '<div class="sum-bld-hdr" onclick="document.getElementById('' + sid + '').classList.toggle('open');document.getElementById('arr_' + sid + '').classList.toggle('open')">';
+    rows += '<div class="sum-bld-hdr" data-sid="' + sid + '" onclick="var s=this.dataset.sid;document.getElementById(s).classList.toggle(\'open\');document.getElementById(\'arr_\'+s).classList.toggle(\'open\')">';
     rows += '<div style="flex:1"><div class="sum-bld-name">' + bld + ' <span style="font-weight:400;font-size:12px;color:var(--text3)">(' + bp.length + ')</span></div>';
     rows += '<div class="sum-bld-pills">';
     rows += '<span class="sum-count">' + bp.length + ' total</span>';

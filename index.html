@@ -1505,7 +1505,7 @@ function checkPinWithUsers(pin) {
     // Find user with this PIN
     var found = null;
     userKeys.forEach(function(k) {
-      if (users[k].pin === pin) found = Object.assign({_key: k}, users[k]);
+      if (String(users[k].pin) === String(pin)) found = Object.assign({_key: k}, users[k]);
     });
 
     if (found) {

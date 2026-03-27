@@ -1532,19 +1532,10 @@ function checkPinWithUsers(pin) {
 }
 
 function checkPinLegacy(pin) {
-  if (pin === getPin()) {
-    setAuthed();
-    currentUserRole = 'admin'; // legacy login = admin so they can set up users
-    localStorage.setItem('pr_role', 'admin');
-    document.getElementById('pinScreen').style.display = 'none';
-    document.getElementById('appRoot').style.display = 'block';
-    document.getElementById('btnAdmin').style.display = '';
-    initApp();
-  } else {
-    refreshDots('err');
-    setMsg('Incorrect PIN — try again', 'e');
-    setTimeout(function(){ pinEntry=''; refreshDots(); }, 650);
-  }
+  // Legacy PIN disabled - all users must be in Firebase
+  refreshDots('err');
+  setMsg('Incorrect PIN — try again', 'e');
+  setTimeout(function(){ pinEntry=''; refreshDots(); }, 650);
 }
 
 // ── PRESENCE ───────────────────────────────────────────────────────────────────
@@ -1742,8 +1733,9 @@ function initApp(){
   startApp(FIREBASE_URL);
 }
 
+// Always require PIN on every page load
+localStorage.removeItem('pr_auth');
 buildPinUI();
-if(isAuthed()){document.getElementById('pinScreen').style.display='none';document.getElementById('appRoot').style.display='block';initApp();}
 </script>
 </body>
 </html>

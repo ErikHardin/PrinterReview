@@ -1105,8 +1105,10 @@ function sumCalc(ps) {
 
 function buildSummary() {
   var el = document.getElementById('sumScreen');
+  el.innerHTML = '<div style="padding:20px;color:var(--text2);font-size:13px">Loading...</div>';
+  try {
   if (!printers.length) {
-    el.innerHTML = '<div class="empty-state">No printer data loaded.</div>';
+    el.innerHTML = '<div class="empty-state">No printer data loaded. Printers array length: 0</div>';
     return;
   }
   var allBlds = blds();
@@ -1196,6 +1198,9 @@ function buildSummary() {
   }
 
   el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div style="padding:20px;color:#FF5B5B;font-size:13px;word-break:break-all">Error: ' + e.message + '<br><br>Stack: ' + e.stack + '</div>';
+  }
 }
 
 function sumToggle(el) {

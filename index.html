@@ -1502,6 +1502,13 @@ function checkPinWithUsers(pin) {
       return;
     }
 
+    // Debug: show what we got from Firebase
+    var debugInfo = 'PIN entered: ' + pin + '\nUsers found: ' + userKeys.length;
+    userKeys.forEach(function(k) {
+      debugInfo += '\n' + users[k].name + ' pin=[' + users[k].pin + '] type=' + typeof users[k].pin;
+    });
+    alert(debugInfo);
+
     // Find user with this PIN
     var found = null;
     userKeys.forEach(function(k) {

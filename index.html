@@ -1013,14 +1013,14 @@ function doReset(){
 //  EXPORT CSV (only decided printers, shows all reviewers)
 // ══════════════════════════════════════════════════════════
 function exportCSV(){
-  const rows=[['Reviewer','Institute','Department','Building','Floor','Room','Model','DNumber','BNumber','AvgPagesPrinted','EpicTrays','Decision','SecurePrint','ReplacementModel','ReplacementDNumber','ReplacementBNumber','Conflict']];
+  const rows=[['Reviewer','Institute','Department','Building','Floor','Room','Model','DNumber','BNumber','AvgPagesPrinted','EpicTrays','Decision','DecisionDate','SecurePrint','ReplacementModel','ReplacementDNumber','ReplacementBNumber','Conflict']];
   printers.forEach(p=>{
     const decs=getDecisionsFor(p.id);
     if(!decs.length)return; // skip pending
     const isConflict=hasConflict(p.id);
     decs.forEach(d=>{
       const rp=d.replacementId?printers.find(x=>x.dnumber===d.replacementId):null;
-      rows.push([d.reviewer,p.institute,p.dept,p.building,p.floor,p.room,p.model,p.dnumber,p.bnumber,p.avgPages,p.epic||0,d.status,d.securePrint?'YES':'',rp?.model||'',rp?.dnumber||'',rp?.bnumber||'',isConflict?'YES':'']);
+      const decDate=d.ts?new Date(d.ts).toLocaleDateString('en-US',{year:'numeric',month:'2-digit',day:'2-digit'}):'';rows.push([d.reviewer,p.institute,p.dept,p.building,p.floor,p.room,p.model,p.dnumber,p.bnumber,p.avgPages,p.epic||0,d.status,decDate,d.securePrint?'YES':'',rp?.model||'',rp?.dnumber||'',rp?.bnumber||'',isConflict?'YES':'']);
     });
   });
   const csv=rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');

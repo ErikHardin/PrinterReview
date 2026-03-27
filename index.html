@@ -1373,18 +1373,19 @@ function updateMyPresence() {
 function renderPresence(data) {
   var bar = document.getElementById('presenceBar');
   if (!bar) return;
-  var others = Object.values(data).filter(function(p) {
-    // Exclude self, exclude stale (older than 5 min)
-    return p.name !== myName && (Date.now() - (p.ts||0)) < 5 * 60 * 1000;
+  // Show all active users including self, stale filter 5 min
+  var all = Object.values(data).filter(function(p) {
+    return (Date.now() - (p.ts||0)) < 5 * 60 * 1000;
   }).slice(0, 5);
 
-  if (!others.length) { bar.innerHTML = ''; return; }
+  if (!all.length) { bar.innerHTML = ''; return; }
 
-  bar.innerHTML = others.map(function(p) {
-    return '<div class="presence-pill">' +
+  bar.innerHTML = all.map(function(p) {
+    var isMe = p.name === myName;
+    return '<div class="presence-pill" style="' + (isMe ? 'border-color:var(--accent);' : '') + '">' +
       '<span class="presence-dot"></span>' +
-      '<span class="presence-name">' + p.name + '</span>' +
-      '<span class="presence-loc">&nbsp;' + p.location + '</span>' +
+      '<span class="presence-name">' + p.name + (isMe ? ' (you)' : '') + '</span>' +
+      '<span class="presence-loc">&nbsp;· ' + p.location + '</span>' +
       '</div>';
   }).join('');
 }

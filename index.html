@@ -374,8 +374,8 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
   <div class="dlg-box">
     <div class="dlg-title">Change My PIN</div>
     <div class="dlg-body">Enter a new PIN for your account. You'll use this next time you log in.</div>
-    <input class="dlg-input dlg-pin" id="cpNew"  type="password" inputmode="numeric" maxlength="8" placeholder="New PIN (4–8 digits)">
-    <input class="dlg-input dlg-pin" id="cpConf" type="password" inputmode="numeric" maxlength="8" placeholder="Confirm new PIN">
+    <input class="dlg-input dlg-pin" id="cpNew"  type="password" inputmode="numeric" maxlength="4" placeholder="New 4-digit PIN">
+    <input class="dlg-input dlg-pin" id="cpConf" type="password" inputmode="numeric" maxlength="4" placeholder="Confirm PIN">
     <div class="dlg-err" id="cpErr"></div>
     <div class="dlg-btns">
       <button class="dlg-cancel" onclick="closeDlg('changePinDlg')">Cancel</button>
@@ -452,7 +452,6 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
     <div class="header">
       <span class="hlogo">🖨️</span>
       <span class="htitle" id="hTitle">Printer Review</span>
-      <span class="hbadge" id="hBadge">0/0</span>
       <button class="hbtn green"   onclick="exportCSV()">CSV</button>
       <button class="hbtn admin-btn" id="btnAdmin" onclick="openAdmin()" style="display:none">&#x1F464; Users</button>
       <button class="hbtn" id="btnSummary" onclick="toggleSummary()">&#x1F4CA;</button>
@@ -597,7 +596,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
       <div class="add-user-form">
         <div class="add-user-row">
           <input class="add-user-input" id="newUserName" type="text" maxlength="30" placeholder="Full name" autocomplete="off">
-          <input class="add-user-input add-user-pin" id="newUserPin" type="password" inputmode="numeric" maxlength="8" placeholder="PIN">
+          <input class="add-user-input add-user-pin" id="newUserPin" type="password" inputmode="numeric" maxlength="4" placeholder="4-digit PIN">
         </div>
         <div class="add-user-row">
           <select class="add-user-select" id="newUserRole">
@@ -650,9 +649,9 @@ function buildPinUI() {
     pad.appendChild(b);
   });
 }
-function pinPress(d){if(pinEntry.length>=getPin().length)return;pinEntry+=d;refreshDots();if(pinEntry.length===getPin().length)setTimeout(checkPin,80);}
+function pinPress(d){if(pinEntry.length>=4)return;pinEntry+=d;refreshDots();if(pinEntry.length===4)setTimeout(checkPin,80);}
 function pinDel(){pinEntry=pinEntry.slice(0,-1);refreshDots();setMsg('');}
-function refreshDots(state){const len=getPin().length;for(let i=0;i<len;i++){const d=document.getElementById('pd'+i);if(!d)return;d.className='pin-dot'+(state==='err'?' err':i<pinEntry.length?' on':'');}}
+function refreshDots(state){const len=4;for(let i=0;i<len;i++){const d=document.getElementById('pd'+i);if(!d)return;d.className='pin-dot'+(state==='err'?' err':i<pinEntry.length?' on':'');}}
 function setMsg(t,cls=''){const m=document.getElementById('pinMsg');m.textContent=t;m.className='pin-msg'+(cls?' '+cls:'');}
 function checkPin(){
   // Try Firebase user lookup first
@@ -1497,7 +1496,7 @@ function addUser() {
   err.textContent = '';
 
   if (!name) { err.textContent = 'Please enter a name.'; return; }
-  if (!/^\d{4,8}$/.test(pin)) { err.textContent = 'PIN must be 4-8 digits.'; return; }
+  if (!/^[0-9]{4}$/.test(pin)) { err.textContent = 'PIN must be exactly 4 digits.'; return; }
 
   // Check for duplicate PIN
   var dupPin = findUserByPin(pin);

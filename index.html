@@ -955,7 +955,7 @@ function updateProgress(){
   const pct=vis.length?Math.round(decided/vis.length*100):0;
   document.getElementById('pbarFill').style.width=pct+'%';
   document.getElementById('progressNums').textContent=decided.toLocaleString()+' / '+vis.length.toLocaleString()+' · '+pct+'%';
-  document.getElementById('hBadge').textContent=decided+'/'+vis.length;
+  const hb=document.getElementById('hBadge');if(hb)hb.textContent=decided+'/'+vis.length;
   let lbl=curBld==='All'?'All Buildings':curBld;
   if(curFlr!=='All')lbl+=' · Floor '+curFlr;
   if(showConflictsOnly)lbl+=' · ⚠ Conflicts only';

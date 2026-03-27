@@ -625,13 +625,6 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 // ══════════════════════════════════════════════════════════
 const EXCEL_URL = 'printers.xlsx';
 const FIREBASE_URL = 'https://printerreview-5c381-default-rtdb.firebaseio.com';
-// Initialize Firebase immediately so user lookup works at PIN screen
-(function(){
-  try {
-    const _app = firebase.initializeApp({ databaseURL: FIREBASE_URL });
-    db = firebase.database(_app);
-  } catch(e) { /* already initialized */ }
-})();
 const SK = { pin:'pr_pin', auth:'pr_auth', name:'pr_name' };
 const DEFAULT_PIN = '1234';
 
@@ -690,6 +683,14 @@ let curBld = 'All', curFlr = 'All', searchQ = '', statusFilter = 'all';
 let showConflictsOnly = false;
 let activeId = null, pendingDec = null, selReplId = null, securePrint = false;
 let db = null;
+// Initialize Firebase immediately so PIN screen can look up users
+try {
+  const _earlyApp = firebase.initializeApp({ databaseURL: FIREBASE_URL });
+  db = firebase.database(_earlyApp);
+} catch(e) {
+  // Already initialized - get existing instance
+  try { db = firebase.database(); } catch(e2) {}
+}
 
 // ══════════════════════════════════════════════════════════
 //  FIREBASE CONFIG

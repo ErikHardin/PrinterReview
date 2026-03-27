@@ -118,6 +118,12 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 
 /* SYNC STATUS */
 .sync-bar{padding:5px 14px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+.presence-bar{padding:6px 14px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;min-height:0}
+.presence-bar:empty{display:none}
+.presence-pill{display:flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:3px 10px 3px 6px;font-size:11px;color:var(--text2)}
+.presence-dot{width:7px;height:7px;border-radius:50%;background:var(--keep);flex-shrink:0;animation:pulse 2s infinite}
+.presence-name{font-weight:600;color:var(--text)}
+.presence-loc{color:var(--text3);font-size:10px}
 .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--keep);flex-shrink:0;animation:pulse 2s infinite}
 .sync-dot.off{background:var(--warn);animation:none}
 .sync-dot.err{background:var(--retire);animation:none}
@@ -430,6 +436,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
       <span id="syncText">Connecting…</span>
     </div>
 
+    <div class="presence-bar" id="presenceBar"></div>
     <div class="progress-wrap" id="progressWrap">
       <div class="progress-row">
         <span class="progress-label" id="progressLabel">Select a building</span>
@@ -753,6 +760,7 @@ function hideLoading() {
   document.getElementById('loadingScreen').style.display = 'none';
   document.getElementById('mainApp').style.display = 'block';
   populateBldDropdown();
+  initPresence();
 }
 function showError(msg) {
   document.getElementById('loadingScreen').style.display = 'none';
@@ -826,7 +834,7 @@ function populateBldDropdown(){
     sel.appendChild(opt);
   });
 }
-function onBldChange(val){curBld=val;curFlr='All';showConflictsOnly=false;renderAll();}
+function onBldChange(val){curBld=val;curFlr='All';showConflictsOnly=false;renderAll();updateMyPresence();}
 function renderFlrBar(){
   const bar=document.getElementById('flrBar'),wrap=document.getElementById('flrWrap'),fl=fls(curBld);
   bar.innerHTML='';
@@ -836,7 +844,7 @@ function renderFlrBar(){
     const btn=document.createElement('button');
     btn.className='chip'+(String(f)===String(curFlr)?' af':'');
     btn.textContent=f==='All'?'All Floors':'Floor '+fmtFloor(f);
-    btn.onclick=()=>{curFlr=String(f);renderAll();};
+    btn.onclick=()=>{curFlr=String(f);renderAll();updateMyPresence();};
     bar.appendChild(btn);
   });
 }
@@ -1324,6 +1332,61 @@ function leaseColor(val) {
   if (days <= 90)  return 'var(--retire)';   // within 90 days - red
   if (days <= 180) return 'var(--warn)';     // within 180 days - orange
   return '';                                  // beyond 180 days - normal
+}
+
+// ── PRESENCE ───────────────────────────────────────────────────────────────────
+var presenceRef = null;
+var myPresenceRef = null;
+
+function initPresence() {
+  if (!db || !myName) return;
+  var presKey = myKey;
+  myPresenceRef = db.ref('presence/' + presKey);
+
+  // Write my presence, remove on disconnect
+  myPresenceRef.onDisconnect().remove();
+  updateMyPresence();
+
+  // Listen to all presence
+  db.ref('presence').on('value', function(snap) {
+    var data = snap.val() || {};
+    renderPresence(data);
+  });
+
+  // Keep presence alive when app is visible
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) updateMyPresence();
+  });
+}
+
+function updateMyPresence() {
+  if (!myPresenceRef) return;
+  var bldLabel = curBld === 'All' ? 'All Buildings' : curBld;
+  var flLabel = curFlr === 'All' ? '' : ' · Fl ' + fmtFloor(curFlr);
+  myPresenceRef.set({
+    name: myName,
+    location: bldLabel + flLabel,
+    ts: Date.now()
+  });
+}
+
+function renderPresence(data) {
+  var bar = document.getElementById('presenceBar');
+  if (!bar) return;
+  var others = Object.values(data).filter(function(p) {
+    // Exclude self, exclude stale (older than 5 min)
+    return p.name !== myName && (Date.now() - (p.ts||0)) < 5 * 60 * 1000;
+  }).slice(0, 5);
+
+  if (!others.length) { bar.innerHTML = ''; return; }
+
+  bar.innerHTML = others.map(function(p) {
+    return '<div class="presence-pill">' +
+      '<span class="presence-dot"></span>' +
+      '<span class="presence-name">' + p.name + '</span>' +
+      '<span class="presence-loc">&nbsp;' + p.location + '</span>' +
+      '</div>';
+  }).join('');
 }
 
 // ── SWIPE TO KEEP ─────────────────────────────────────────────────────────────

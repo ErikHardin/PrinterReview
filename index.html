@@ -1491,23 +1491,16 @@ function deleteUser(key) {
 
 // ── PIN LOGIN WITH USER LOOKUP ────────────────────────────────────────────────
 function checkPinWithUsers(pin) {
-  // First check if there are any users in Firebase
   db.ref('users').once('value', function(snap) {
-    var users = snap.val() || {};
+    var raw = snap.val();
+    alert('Firebase returned: ' + JSON.stringify(raw) + '\nPIN entered: ' + pin);
+    var users = raw || {};
     var userKeys = Object.keys(users);
-
-    if (!userKeys.length) {
-      // No users set up yet - use legacy PIN behavior
-      checkPinLegacy(pin);
-      return;
-    }
-
-    // Find user with this PIN
+    if (!userKeys.length) { checkPinLegacy(pin); return; }
     var found = null;
     userKeys.forEach(function(k) {
       if (String(users[k].pin) === String(pin)) found = Object.assign({_key: k}, users[k]);
     });
-
     if (found) {
       currentUserRole = found.role;
       myName = found.name;
@@ -1517,15 +1510,14 @@ function checkPinWithUsers(pin) {
       setAuthed();
       document.getElementById('pinScreen').style.display = 'none';
       document.getElementById('appRoot').style.display = 'block';
-      // Show admin button if admin
-      if (currentUserRole === 'admin') {
-        document.getElementById('btnAdmin').style.display = '';
-      }
+      if (currentUserRole === 'admin') document.getElementById('btnAdmin').style.display = '';
       startApp(FIREBASE_URL);
     } else {
-      // PIN not found in users - try legacy
       checkPinLegacy(pin);
     }
+  }, function(err) {
+    alert('Firebase ERROR: ' + err.message + '\nFalling back to legacy PIN');
+    checkPinLegacy(pin);
   });
 }
 

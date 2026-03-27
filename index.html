@@ -495,11 +495,16 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
         <div class="dchip"><div class="dchip-l">B Number</div>     <div class="dchip-v" id="mBnum"></div></div>
         <div class="dchip"><div class="dchip-l">Avg Pages/mo</div> <div class="dchip-v" id="mPages"></div></div>
         <div class="dchip"><div class="dchip-l">Epic Trays</div>     <div class="dchip-v" id="mEpic"></div></div>
+        <div class="dchip"><div class="dchip-l">Serial #</div>         <div class="dchip-v" id="mSerial"></div></div>
       </div>
       <!-- Conflict panel (shown when multiple reviewers disagree) -->
       <div class="conflict-panel" id="conflictPanel" style="display:none">
         <div class="conflict-title">⚠️ Conflict — reviewers disagree</div>
         <div id="conflictRows"></div>
+      </div>
+      <div class="conflict-panel" id="othersPanel" style="display:none;background:var(--accent-dim);border-color:var(--accent)">
+        <div class="conflict-title" style="color:var(--accent)">👥 Others have reviewed this printer</div>
+        <div id="othersRows"></div>
       </div>
 
       <div class="secure-print-wrap" id="securePrintWrap">
@@ -638,7 +643,7 @@ function setSyncStatus(state) {
 // ══════════════════════════════════════════════════════════
 //  LOAD PRINTERS FROM GITHUB
 // ══════════════════════════════════════════════════════════
-const CM={institute:['institute','institution','owninggroup','owner'],dept:['department','dept'],building:['building','bldg'],floor:['floor','flr'],room:['room','roomnumber','room number'],model:['model','printermodel'],dnumber:['dnumber','d number','dnum','d#','printerid'],bnumber:['bnumber','b number','bnum','b#','vendorid'],avgPages:['avgpagesprinted','avgpages','averagepages','monthlyavg','avg pages'],epic:['epic','epictrays','epic trays','epic count']};
+const CM={institute:['institute','institution','owninggroup','owner'],dept:['department','dept'],building:['building','bldg'],floor:['floor','flr'],room:['room','roomnumber','room number'],model:['model','printermodel'],dnumber:['dnumber','d number','dnum','d#','printerid'],bnumber:['bnumber','b number','bnum','b#','vendorid'],avgPages:['avgpagesprinted','avgpages','averagepages','monthlyavg','avg pages'],epic:['epic','epictrays','epic trays','epic count'],serial:['serial','serialnumber','serial number','serialno','serial no']};
 const nk=s=>String(s).toLowerCase().replace(/[\s_\-\.]/g,'');
 
 async function loadPrinters() {
@@ -656,7 +661,7 @@ async function loadPrinters() {
     if (miss.length) throw new Error('Could not find columns: ' + miss.join(', '));
     const g = (row,f) => cm[f]!==undefined ? String(row[cm[f]]||'').trim() : '';
     const loaded = [];
-    rows.slice(1).forEach((row,i)=>{const m=g(row,'model');if(!m)return;const epicVal=cm['epic']!==undefined?parseFloat(g(row,'epic'))||0:0;loaded.push({id:i+1,institute:g(row,'institute'),dept:g(row,'dept'),building:g(row,'building'),floor:g(row,'floor'),room:g(row,'room'),model:m,dnumber:g(row,'dnumber'),bnumber:g(row,'bnumber'),avgPages:parseFloat(g(row,'avgPages'))||0,epic:epicVal});});
+    rows.slice(1).forEach((row,i)=>{const m=g(row,'model');if(!m)return;const epicVal=cm['epic']!==undefined?parseFloat(g(row,'epic'))||0:0;loaded.push({id:i+1,institute:g(row,'institute'),dept:g(row,'dept'),building:g(row,'building'),floor:g(row,'floor'),room:g(row,'room'),model:m,dnumber:g(row,'dnumber'),bnumber:g(row,'bnumber'),avgPages:parseFloat(g(row,'avgPages'))||0,epic:epicVal,serial:g(row,'serial')});});
     if (!loaded.length) throw new Error('No printer rows found in printers.xlsx.');
     printers = loaded;
     subscribeToDecisions();
@@ -741,7 +746,7 @@ function showError(msg) {
 //  UTILS
 // ══════════════════════════════════════════════════════════
 const fmt = n => !n&&n!==0?'—':n>=1000?(n/1000).toFixed(1)+'k':String(n);
-const hi  = n => n >= 5000;
+const hi  = n => n >= 500;
 const fmtFloor = f => String(f||'').replace(/^floor\s*/i,'').trim();
 const blds = () => [...new Set(printers.map(p=>p.building))].sort();
 const fls  = b  => [...new Set(printers.filter(p=>b==='All'||p.building===b).map(p=>p.floor))].sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true}));
@@ -893,7 +898,7 @@ function renderList(){
     if(allDecs.length){
       rev=`<div class="prow-reviewers">👤 ${allDecs.map(d=>d.reviewer).join(', ')}</div>`;
     }
-    row.innerHTML=`<div class="prow-top"><div class="prow-main"><div class="prow-ids">${p.dnumber} · ${p.bnumber}</div><div class="prow-model">${p.model}</div><div class="prow-loc">${[p.dept,p.room?'Rm '+p.room:''].filter(Boolean).join(' · ')}</div>${rn}${rev}</div><span class="sbadge ${bc}">${bt}</span></div><div class="prow-meta"><span>Fl ${fmtFloor(p.floor)}</span><span class="${hi(p.avgPages)?'mw':''}">📄 ${fmt(p.avgPages)}/mo${hi(p.avgPages)?' ⚠️':''}</span>${p.epic>0?'<span class="epic-yes">EPIC '+p.epic+'</span>':''}</div>`;
+    row.innerHTML=`<div class="prow-top"><div class="prow-main"><div class="prow-ids">${p.dnumber} · ${p.bnumber}${p.serial?` · <span style="color:var(--text3)">S/N: ${p.serial}</span>`:''}</div><div class="prow-model">${p.model}</div><div class="prow-loc">${[p.dept,p.room?'Rm '+p.room:''].filter(Boolean).join(' · ')}</div>${rn}${rev}</div><span class="sbadge ${bc}">${bt}</span></div><div class="prow-meta"><span>Fl ${fmtFloor(p.floor)}</span><span class="${hi(p.avgPages)?'mw':''}">📄 ${fmt(p.avgPages)}/mo${hi(p.avgPages)?' ⚠️':''}</span>${p.epic>0?'<span class="epic-yes">EPIC '+p.epic+'</span>':''}</div>`;
     list.appendChild(row);
   });
   if(more>0){const note=document.createElement('div');note.className='empty-state';note.style.padding='16px';note.innerHTML=`<div style="font-size:13px;color:var(--text3)">+${more.toLocaleString()} more — use filters or search to narrow down.</div>`;list.appendChild(note);}
@@ -927,10 +932,26 @@ function openModal(id){
   document.getElementById('mBnum').textContent=p.bnumber;
   const mp=document.getElementById('mPages');mp.textContent=fmt(p.avgPages)+'/mo';mp.className='dchip-v'+(hi(p.avgPages)?' w':'');
   const epicEl=document.getElementById('mEpic');epicEl.textContent=p.epic>0?p.epic+' tray'+(p.epic!==1?'s':''):'None';epicEl.style.color=p.epic>0?'var(--accent)':'';
+  document.getElementById('mSerial').textContent=p.serial||'—';
 
   // Conflict panel
   const allDecs=getDecisionsFor(id);
   const isConflict=hasConflict(id);
+  // Show others' decisions panel
+  const allDecsModal=getDecisionsFor(id);
+  const othersDecsModal=allDecsModal.filter(d=>d.reviewer!==myName);
+  const op=document.getElementById('othersPanel');
+  if(othersDecsModal.length>0){
+    op.style.display='block';
+    document.getElementById('othersRows').innerHTML=othersDecsModal.map(d=>{
+      const rp2=d.replacementId?printers.find(x=>x.dnumber===d.replacementId):null;
+      const decLabel=d.status==='keep'?'✓ Keep':d.status==='retire'?'✗ Retire':'? Not Found';
+      const decCls=d.status==='keep'?'k':d.status==='retire'?'r':'nf';
+      const replLabel=d.securePrint?'🔒 Secure Print':rp2?rp2.dnumber:'';
+      return '<div class="conflict-row"><span class="conflict-reviewer">'+d.reviewer+'</span><span class="conflict-dec '+decCls+'">'+decLabel+'</span>'+(replLabel?'<span class="conflict-repl">'+replLabel+'</span>':'')+'</div>';
+    }).join('');
+  } else { op.style.display='none'; }
+
   const cp=document.getElementById('conflictPanel');
   if(isConflict&&allDecs.length>=2){
     cp.style.display='block';
@@ -987,6 +1008,14 @@ function toggleSecurePrint(){
 }
 function saveDec(){
   if(!pendingDec||!activeId)return;
+  // Check if we're overwriting someone else's decision
+  const allDecsNow=getDecisionsFor(activeId);
+  const othersDecsNow=allDecsNow.filter(d=>d.reviewer!==myName);
+  if(othersDecsNow.length>0){
+    const names=othersDecsNow.map(d=>d.reviewer).join(', ');
+    const confirmed=confirm(names+' has already made a decision on this printer. Do you want to override their decision with yours?');
+    if(!confirmed)return;
+  }
   const replP=selReplId?printers.find(x=>x.id===selReplId):null;
   const dec={status:pendingDec,replacementId:pendingDec==='retire'&&!securePrint&&replP?(replP.dnumber):null,securePrint:pendingDec==='retire'?securePrint:false,reviewer:myName,ts:Date.now()};
   // Write to Firebase: decisions/{dnumber}/{myKey}
@@ -1013,14 +1042,14 @@ function doReset(){
 //  EXPORT CSV (only decided printers, shows all reviewers)
 // ══════════════════════════════════════════════════════════
 function exportCSV(){
-  const rows=[['Reviewer','Institute','Department','Building','Floor','Room','Model','DNumber','BNumber','AvgPagesPrinted','EpicTrays','Decision','DecisionDate','SecurePrint','ReplacementModel','ReplacementDNumber','ReplacementBNumber','Conflict']];
+  const rows=[['Reviewer','Institute','Department','Building','Floor','Room','Model','DNumber','BNumber','SerialNumber','AvgPagesPrinted','EpicTrays','Decision','DecisionDate','SecurePrint','ReplacementModel','ReplacementDNumber','ReplacementBNumber','Conflict']];
   printers.forEach(p=>{
     const decs=getDecisionsFor(p.id);
     if(!decs.length)return; // skip pending
     const isConflict=hasConflict(p.id);
     decs.forEach(d=>{
       const rp=d.replacementId?printers.find(x=>x.dnumber===d.replacementId):null;
-      const decDate=d.ts?new Date(d.ts).toLocaleDateString('en-US',{year:'numeric',month:'2-digit',day:'2-digit'}):'';rows.push([d.reviewer,p.institute,p.dept,p.building,p.floor,p.room,p.model,p.dnumber,p.bnumber,p.avgPages,p.epic||0,d.status,decDate,d.securePrint?'YES':'',rp?.model||'',rp?.dnumber||'',rp?.bnumber||'',isConflict?'YES':'']);
+      const decDate=d.ts?new Date(d.ts).toLocaleDateString('en-US',{year:'numeric',month:'2-digit',day:'2-digit'}):'';rows.push([d.reviewer,p.institute,p.dept,p.building,p.floor,p.room,p.model,p.dnumber,p.bnumber,p.serial||'',p.avgPages,p.epic||0,d.status,decDate,d.securePrint?'YES':'',rp?.model||'',rp?.dnumber||'',rp?.bnumber||'',isConflict?'YES':'']);
     });
   });
   const csv=rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');

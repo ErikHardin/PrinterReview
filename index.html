@@ -899,7 +899,7 @@ function renderList(){
     if(allDecs.length){
       rev=`<div class="prow-reviewers">👤 ${allDecs.map(d=>d.reviewer).join(', ')}</div>`;
     }
-    row.innerHTML=`<div class="prow-top"><div class="prow-main"><div class="prow-ids">${p.dnumber} · ${p.bnumber}</div>${p.serial?`<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:.03em;margin-bottom:2px">S/N: ${p.serial}</div>`:''}<div class="prow-model">${p.model}</div><div class="prow-loc">${[p.dept,p.room?'Rm '+p.room:''].filter(Boolean).join(' · ')}</div>${rn}${rev}</div><span class="sbadge ${bc}">${bt}</span></div><div class="prow-meta"><span>Fl ${fmtFloor(p.floor)}</span><span class="${hi(p.avgPages)?'mw':''}">📄 ${fmt(p.avgPages)}/mo${hi(p.avgPages)?' ⚠️':''}</span>${p.epic>0?'<span class="epic-yes">EPIC '+p.epic+'</span>':''}${p.leaseEnd&&p.leaseEnd!=='N/A'&&p.leaseEnd!==''?'<span style="color:var(--warn);font-weight:600">📋 Lease: '+p.leaseEnd+'</span>':''}</div>`;
+    row.innerHTML=`<div class="prow-top"><div class="prow-main"><div class="prow-ids">${p.dnumber} · ${p.bnumber}</div>${p.serial?`<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:.03em;margin-bottom:2px">S/N: ${p.serial}</div>`:''}<div class="prow-model">${p.model}</div><div class="prow-loc">${[p.dept,p.room?'Rm '+p.room:''].filter(Boolean).join(' · ')}</div>${rn}${rev}</div><span class="sbadge ${bc}">${bt}</span></div><div class="prow-meta"><span>Fl ${fmtFloor(p.floor)}</span><span class="${hi(p.avgPages)?'mw':''}">📄 ${fmt(p.avgPages)}/mo${hi(p.avgPages)?' ⚠️':''}</span>${p.epic>0?'<span class="epic-yes">EPIC '+p.epic+'</span>':''}${p.leaseEnd&&p.leaseEnd!=='N/A'&&p.leaseEnd!==''?'<span style="color:'+leaseColor(p.leaseEnd)+';font-weight:600">📋 Lease: '+fmtLeaseDate(p.leaseEnd)+'</span>':''}</div>`;
     list.appendChild(row);
   });
   if(more>0){const note=document.createElement('div');note.className='empty-state';note.style.padding='16px';note.innerHTML=`<div style="font-size:13px;color:var(--text3)">+${more.toLocaleString()} more — use filters or search to narrow down.</div>`;list.appendChild(note);}
@@ -934,7 +934,7 @@ function openModal(id){
   const mp=document.getElementById('mPages');mp.textContent=fmt(p.avgPages)+'/mo';mp.className='dchip-v'+(hi(p.avgPages)?' w':'');
   const epicEl=document.getElementById('mEpic');epicEl.textContent=p.epic>0?p.epic+' tray'+(p.epic!==1?'s':''):'None';epicEl.style.color=p.epic>0?'var(--accent)':'';
   document.getElementById('mSerial').textContent=p.serial||'—';
-  const leEl=document.getElementById('mLeaseEnd');leEl.textContent=p.leaseEnd||'—';leEl.style.color=(p.leaseEnd&&p.leaseEnd!=='N/A'&&p.leaseEnd!=='')?'var(--warn)':'';
+  const leEl=document.getElementById('mLeaseEnd');leEl.textContent=fmtLeaseDate(p.leaseEnd)||'—';leEl.style.color=leaseColor(p.leaseEnd);
 
   // Conflict panel
   const allDecs=getDecisionsFor(id);
@@ -1008,7 +1008,7 @@ function renderPicker(q){
   const hits=q2?cands.filter(x=>[x.dnumber,x.bnumber,x.model,x.room,x.dept].some(v=>String(v||'').toLowerCase().includes(q2))):cands.slice(0,50);
   if(!hits.length){list.innerHTML='<div class="pi-empty">No other printers on this floor.</div>';return;}
   list.innerHTML='';
-  hits.forEach(x=>{const item=document.createElement('div');item.className='pi'+(x.id===selReplId?' sel':'');item.innerHTML=`<div class="pi-dot"></div><div><div class="pi-model">${x.model}</div><div class="pi-meta">${x.dnumber} · ${x.bnumber} · Rm ${x.room} · ${fmt(x.avgPages)}/mo${x.leaseEnd&&x.leaseEnd!=='N/A'&&x.leaseEnd!==''?' · 📋 '+x.leaseEnd:''}</div></div>`;item.onclick=()=>{selReplId=selReplId===x.id?null:x.id;renderPicker(document.getElementById('srchIn').value);refreshSelRepl();refreshDecBtns();};list.appendChild(item);});
+  hits.forEach(x=>{const item=document.createElement('div');item.className='pi'+(x.id===selReplId?' sel':'');item.innerHTML=`<div class="pi-dot"></div><div><div class="pi-model">${x.model}</div><div class="pi-meta">${x.dnumber} · ${x.bnumber} · Rm ${x.room} · ${fmt(x.avgPages)}/mo${x.leaseEnd&&x.leaseEnd!=='N/A'&&x.leaseEnd!==''?' · 📋 '+fmtLeaseDate(x.leaseEnd):''}</div></div>`;item.onclick=()=>{selReplId=selReplId===x.id?null:x.id;renderPicker(document.getElementById('srchIn').value);refreshSelRepl();refreshDecBtns();};list.appendChild(item);});
 }
 function refreshSelRepl(){const box=document.getElementById('selRepl');if(selReplId&&pendingDec==='retire'){const rp=printers.find(p=>p.id===selReplId);document.getElementById('selReplM').textContent='✓ '+rp.model;document.getElementById('selReplS').textContent=rp.dnumber+' · '+rp.bnumber+' · Rm '+rp.room;box.classList.add('show');}else box.classList.remove('show');}
 
@@ -1264,6 +1264,37 @@ function sumNav(el) {
   renderAll();
 }
 
+
+function parseLeaseDate(val) {
+  if (!val || val === 'N/A' || val === '') return null;
+  // If it's a number or numeric string, treat as Excel serial date
+  const num = parseFloat(val);
+  if (!isNaN(num) && String(val).trim() === String(num)) {
+    // Excel serial date: days since Jan 0, 1900 (with leap year bug)
+    const date = new Date((num - 25569) * 86400 * 1000);
+    return date;
+  }
+  // Otherwise try parsing as a date string
+  const date = new Date(val);
+  return isNaN(date.getTime()) ? null : date;
+}
+
+function fmtLeaseDate(val) {
+  const d = parseLeaseDate(val);
+  if (!d) return val || '—';
+  return d.toLocaleDateString('en-US', {year:'numeric', month:'2-digit', day:'2-digit'});
+}
+
+function leaseColor(val) {
+  const d = parseLeaseDate(val);
+  if (!d) return '';
+  const now = new Date();
+  const days = (d - now) / (1000 * 60 * 60 * 24);
+  if (days < 0)   return 'var(--retire)';   // already expired - red
+  if (days <= 90)  return 'var(--retire)';   // within 90 days - red
+  if (days <= 180) return 'var(--warn)';     // within 180 days - orange
+  return '';                                  // beyond 180 days - normal
+}
 
 // ══════════════════════════════════════════════════════════
 //  BACKDROP

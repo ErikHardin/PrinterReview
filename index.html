@@ -365,6 +365,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
   <div class="pin-dots" id="pinDots"></div>
   <div class="pin-pad"  id="pinPad"></div>
   <div class="pin-msg"  id="pinMsg"></div>
+  <a class="pin-link" href="https://erikhardin.github.io/PrinterReview/guide.html" target="_blank" style="margin-top:24px;font-size:13px;color:var(--text3);text-decoration:none;display:flex;align-items:center;gap:6px">📖 Quick Start Guide</a>
 </div>
 
 
@@ -663,13 +664,8 @@ function checkPin(){
 }
 function openDlg(id){document.getElementById(id).classList.add('open');}
 function closeDlg(id){document.getElementById(id).classList.remove('open');}
-function saveNewPin_DISABLED(){
-  const o=document.getElementById('cpOld').value.trim(),n=document.getElementById('cpNew').value.trim(),c=document.getElementById('cpConf').value.trim(),e=document.getElementById('cpErr');
-  if(o!==getPin()){e.textContent='Current PIN is incorrect.';return;}
-  if(!/^\d{4,8}$/.test(n)){e.textContent='New PIN must be 4–8 digits.';return;}
-  if(n!==c){e.textContent='PINs do not match.';return;}
-  localStorage.setItem(SK.pin,n);closeDlg('changePinDlg');pinEntry='';buildPinUI();
-  setMsg('✓ PIN updated','ok');setTimeout(()=>setMsg(''),2500);
+function saveNewPin_DISABLED_NOOP(){
+  // disabled
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1730,8 +1726,7 @@ function setModalHeight(){
   if(!modal)return;
   // Use visualViewport if available (handles Safari toolbar correctly)
   const vh=window.visualViewport?window.visualViewport.height:window.innerHeight;
-  const barH=document.getElementById('actionBar').offsetHeight||160;
-  modal.style.maxHeight=Math.floor(vh-barH)+'px';
+  modal.style.maxHeight=Math.floor(vh*0.88)+'px';
 }
 // Re-set height when visual viewport changes (Safari toolbar show/hide)
 if(window.visualViewport){

@@ -286,6 +286,10 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .btn-save:disabled{opacity:.25}
 .btn-save:not(:disabled):active{opacity:.8}
 .empty-state{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px}
+.rocket-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(100px);z-index:997;background:var(--surface);border:1px solid var(--accent);border-radius:16px;padding:14px 24px;text-align:center;font-size:22px;font-weight:700;color:var(--text);box-shadow:0 8px 32px rgba(0,0,0,.5);transition:transform .4s cubic-bezier(.22,.68,0,1.2),opacity .4s;opacity:0;pointer-events:none;white-space:nowrap}
+.rocket-toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.confetti-canvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:996}
+
 .schedule-screen{display:none;padding:12px 12px 80px}
 .sched-filter-row{display:flex;gap:8px;margin-bottom:14px}
 .sched-chip{flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:transparent;font-family:'Sora',sans-serif;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;text-align:center;transition:all .15s}
@@ -709,6 +713,8 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
   </div>
 </div>
 
+<canvas class="confetti-canvas" id="confettiCanvas"></canvas>
+<div class="rocket-toast" id="rocketToast"></div>
 <div class="floor-celebration" id="floorCelebration">
   <div class="celeb-emoji">🎉</div>
   <div class="celeb-title" id="celebTitle">Floor Complete!</div>
@@ -1268,7 +1274,7 @@ function saveDec(){
 
   // Write to Firebase with offline fallback
   db.ref('decisions/'+fireKey+'/'+myKey).set(dec)
-    .then(()=>{closeModal();checkFloorComplete();})
+    .then(()=>{closeModal();checkFloorComplete();checkRocketLaunch(activeId);checkBuildingComplete();})
     .catch(()=>{
       // Offline - queue locally and update UI optimistically
       offlineQueue.push({path:'decisions/'+fireKey+'/'+myKey, data:dec});
@@ -2146,6 +2152,102 @@ function checkPinLegacy(pin) {
   setTimeout(function(){ pinEntry=''; refreshDots(); }, 650);
 }
 
+// ── ROCKET TOAST (first decision on a floor) ──────────────────────────────────
+var rocketShownFloors = {};
+
+function checkRocketLaunch(printerId) {
+  if (curBld === 'All' || !curFlr || curFlr === 'All') return;
+  var floorKey = curBld + '|' + curFlr;
+  if (rocketShownFloors[floorKey]) return;
+  // Check if this is the first decision on this floor
+  var floorPrinters = printers.filter(function(p) {
+    return p.building === curBld && String(p.floor) === String(curFlr);
+  });
+  var decided = floorPrinters.filter(function(p) {
+    return getDecisionsFor(p.id).length > 0;
+  }).length;
+  if (decided === 1) {
+    // First decision on this floor!
+    rocketShownFloors[floorKey] = true;
+    showRocketToast('🚀 Floor ' + fmtFloor(curFlr) + ' is off to the races!');
+  }
+}
+
+function showRocketToast(msg) {
+  var toast = document.getElementById('rocketToast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(function() { toast.classList.remove('show'); }, 3500);
+}
+
+// ── CONFETTI (building 100% complete) ─────────────────────────────────────────
+var confettiShownBuildings = {};
+
+function checkBuildingComplete() {
+  if (curBld === 'All') return;
+  if (confettiShownBuildings[curBld]) return;
+  var bldPrinters = printers.filter(function(p){ return p.building === curBld; });
+  if (!bldPrinters.length) return;
+  var allDone = bldPrinters.every(function(p){ return getDecisionsFor(p.id).length > 0; });
+  if (allDone) {
+    confettiShownBuildings[curBld] = true;
+    showRocketToast('🏆 ' + curBld + ' is 100% complete! Amazing work!');
+    launchConfetti();
+  }
+}
+
+function launchConfetti() {
+  var canvas = document.getElementById('confettiCanvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  canvas.style.display = 'block';
+
+  var colors = ['#4F7FFF','#34C97A','#FF5B5B','#F5A623','#C97BFF','#FFD700','#00CED1'];
+  var pieces = [];
+  for (var i = 0; i < 150; i++) {
+    pieces.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height - canvas.height,
+      w: Math.random() * 10 + 5,
+      h: Math.random() * 6 + 3,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rotation: Math.random() * 360,
+      rotSpeed: (Math.random() - 0.5) * 8,
+      speedY: Math.random() * 4 + 2,
+      speedX: (Math.random() - 0.5) * 3
+    });
+  }
+
+  var frame = 0;
+  var maxFrames = 180;
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces.forEach(function(p) {
+      ctx.save();
+      ctx.translate(p.x + p.w/2, p.y + p.h/2);
+      ctx.rotate(p.rotation * Math.PI / 180);
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = Math.max(0, 1 - frame/maxFrames);
+      ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      ctx.restore();
+      p.y += p.speedY;
+      p.x += p.speedX;
+      p.rotation += p.rotSpeed;
+    });
+    frame++;
+    if (frame < maxFrames) {
+      requestAnimationFrame(draw);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.style.display = 'none';
+    }
+  }
+  draw();
+}
+
 // ── PRESENCE ───────────────────────────────────────────────────────────────────
 var presenceRef = null;
 var myPresenceRef = null;
@@ -2245,7 +2347,7 @@ function handleSwipeRight(printerId, row) {
     setTimeout(function(){ row.classList.remove('swipe-animate'); }, 400);
     var dec = {status:'keep', replacementId:null, securePrint:false, reviewer:myName, ts:Date.now()};
     db.ref('decisions/'+fireKey+'/'+myKey).set(dec)
-      .then(function(){ renderAll(); checkFloorComplete(); })
+      .then(function(){ renderAll(); checkFloorComplete(); checkRocketLaunch(printerId); checkBuildingComplete(); })
       .catch(function(e){ alert('Save failed: '+e.message); });
 
   } else if (myDec) {

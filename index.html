@@ -1231,6 +1231,26 @@ function saveDec(){
   // Write to Firebase: decisions/{dnumber}/{myKey}
   const p=printers.find(x=>x.id===activeId);
   const fireKey=p?dkey(p.dnumber):String(activeId);
+  // Check if this printer is assigned as a replacement for another printer
+  if (pendingDec === 'retire') {
+    var thisP = printers.find(function(x){ return x.id===activeId; });
+    var usedAsReplacement = [];
+    printers.forEach(function(p) {
+      if (p.id === activeId) return;
+      var decs = getDecisionsFor(p.id);
+      decs.forEach(function(d) {
+        if (d.replacementId && (d.replacementId === thisP.dnumber || d.replacementId === thisP.id)) {
+          usedAsReplacement.push(p.dnumber);
+        }
+      });
+    });
+    if (usedAsReplacement.length > 0) {
+      var names = usedAsReplacement.join(', ');
+      var ok = confirm('⚠️ Warning: This printer is assigned as a replacement for ' + names + '. Retiring it may leave those printers without a valid replacement. Do you want to continue?');
+      if (!ok) return;
+    }
+  }
+
   // Write to Firebase with offline fallback
   db.ref('decisions/'+fireKey+'/'+myKey).set(dec)
     .then(()=>{closeModal();checkFloorComplete();})

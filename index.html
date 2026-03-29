@@ -1041,7 +1041,7 @@ function updateProgress(){
   const pct=vis.length?Math.round(decided/vis.length*100):0;
   document.getElementById('pbarFill').style.width=pct+'%';
   document.getElementById('progressNums').textContent=decided.toLocaleString()+' / '+vis.length.toLocaleString()+' · '+pct+'%';
-  const hb=document.getElementById('hBadge');if(hb)hb.textContent=decided+'/'+vis.length;
+  // hBadge removed from header - no action needed
   let lbl=curBld==='All'?'All Buildings':curBld;
   if(curFlr!=='All')lbl+=' · Floor '+curFlr;
   if(showConflictsOnly)lbl+=' · ⚠ Conflicts only';
@@ -1306,6 +1306,13 @@ var summaryOpen = false;
 var summaryBldFilter = 'All';
 
 function toggleSummary() {
+  // Close schedule if open
+  if (scheduleOpen) {
+    scheduleOpen = false;
+    document.getElementById('scheduleScreen').style.display = 'none';
+    var bs = document.getElementById('btnSchedule');
+    if (bs) { bs.style.background=''; bs.style.borderColor=''; bs.style.color=''; }
+  }
   summaryOpen = !summaryOpen;
   var btn = document.getElementById('btnSummary');
   var screen = document.getElementById('sumScreen');
@@ -1314,23 +1321,26 @@ function toggleSummary() {
   var sw = document.getElementById('searchWrap');
   var pw = document.getElementById('progressWrap');
   var sb = document.getElementById('syncBar');
+  var pb = document.getElementById('presenceBar');
   if (summaryOpen) {
-    list.style.display = 'none';
-    fs.style.display   = 'none';
-    sw.style.display   = 'none';
-    pw.style.display   = 'none';
-    sb.style.display   = 'none';
+    list.style.display   = 'none';
+    fs.style.display     = 'none';
+    sw.style.display     = 'none';
+    pw.style.display     = 'none';
+    sb.style.display     = 'none';
+    if (pb) pb.style.display = 'none';
     screen.style.display = 'block';
     btn.style.background  = 'var(--accent-dim)';
     btn.style.borderColor = 'var(--accent)';
     btn.style.color       = 'var(--accent)';
     buildSummary();
   } else {
-    list.style.display = 'flex';
-    fs.style.display   = 'flex';
-    sw.style.display   = 'block';
-    pw.style.display   = 'block';
-    sb.style.display   = 'flex';
+    list.style.display   = 'flex';
+    fs.style.display     = 'flex';
+    sw.style.display     = 'block';
+    pw.style.display     = 'block';
+    sb.style.display     = 'flex';
+    if (pb) pb.style.display = '';
     screen.style.display = 'none';
     btn.style.background  = '';
     btn.style.borderColor = '';

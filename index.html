@@ -280,8 +280,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .btn-save:disabled{opacity:.25}
 .btn-save:not(:disabled):active{opacity:.8}
 .empty-state{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px}
-.schedule-screen{display:none;position:fixed;top:56px;left:0;right:0;bottom:0;z-index:98;background:var(--bg);overflow-y:auto;padding:12px 12px 80px}
-.schedule-screen.open{display:block}
+.schedule-screen{display:none;padding:12px 12px 80px}
 .sched-filter-row{display:flex;gap:8px;margin-bottom:14px}
 .sched-chip{flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:transparent;font-family:'Sora',sans-serif;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;text-align:center;transition:all .15s}
 .sched-chip.all{background:var(--surface2);border-color:var(--border2);color:var(--text)}
@@ -569,7 +568,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
       </div>
     </div>
     <div class="schedule-screen" id="scheduleScreen">
-      <div class="sched-filter-row" id="schedFilterRow" style="display:none">
+      <div class="sched-filter-row" id="schedFilterRow">
         <button class="sched-chip" id="schedChipAll" onclick="setSchedFilter('all')">All Teams</button>
         <button class="sched-chip" id="schedChipA"   onclick="setSchedFilter('a')">&#x1F535; Team A</button>
         <button class="sched-chip" id="schedChipB"   onclick="setSchedFilter('b')">&#x1F7E3; Team B</button>
@@ -1452,13 +1451,9 @@ function buildSummary() {
   var chipAll = document.getElementById('schedChipAll');
   var chipA   = document.getElementById('schedChipA');
   var chipB   = document.getElementById('schedChipB');
-  var filterRow = document.getElementById('schedFilterRow');
-  if (chipAll && chipA && chipB && filterRow) {
-    filterRow.style.display = 'flex';
-    chipAll.className = 'sched-chip' + (scheduleFilter==='all' ? ' all' : '');
-    chipA.className   = 'sched-chip' + (scheduleFilter==='a'   ? ' ta'  : '');
-    chipB.className   = 'sched-chip' + (scheduleFilter==='b'   ? ' tb'  : '');
-  }
+  if (chipAll) chipAll.className = 'sched-chip' + (scheduleFilter==='all' ? ' all' : '');
+  if (chipA)   chipA.className   = 'sched-chip' + (scheduleFilter==='a'   ? ' ta'  : '');
+  if (chipB)   chipB.className   = 'sched-chip' + (scheduleFilter==='b'   ? ' tb'  : '');
   var contentEl = document.getElementById('scheduleContent');
   if (contentEl) contentEl.innerHTML = html;
   else el.innerHTML = html;
@@ -1596,7 +1591,7 @@ async function loadAndRenderSchedule() {
     var iBuilding = colIdx(['building','bldg']);
     var iFloor    = colIdx(['floor','flr']);
     var iDate     = colIdx(['walkthroughdate','date','scheduledate']);
-    var iTeam     = colIdx(['walkthroughteam','team','printer']);
+    var iTeam     = colIdx(['walkthroughteam','team','printer','printerwalkthroughteam','printerwalkthrough']);
     var iTime     = colIdx(['targetwalkthroughtime','targettime','time','walkthroughtime']);
     var iPartners = colIdx(['walkthroughpartnersforfloor','partners','walkthroughpartners']);
     scheduleData = [];
@@ -1781,7 +1776,13 @@ function renderSchedule() {
   html += '<button style="flex:1;padding:8px;border-radius:7px;border:none;font-family:Sora,sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;background:' + (schedDateFilter==='today'?'var(--surface)':'transparent') + ';color:' + (schedDateFilter==='today'?'var(--accent)':'var(--text3)') + '" onclick="setSchedDateFilter(&quot;today&quot;)">📅 Today</button>';
   html += '<button style="flex:1;padding:8px;border-radius:7px;border:none;font-family:Sora,sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;background:' + (schedDateFilter==='all'?'var(--surface)':'transparent') + ';color:' + (schedDateFilter==='all'?'var(--text)':'var(--text3)') + '" onclick="setSchedDateFilter(&quot;all&quot;)">All Dates</button>';
   html += '</div>';
-  html += '<div class="sched-date-hdr">📅 ' + (dateStr || 'Review Schedule') + '</div>';
+  var mainDateDisplay = dateStr || 'Review Schedule';
+  var mainDateNum = parseFloat(mainDateDisplay);
+  if (!isNaN(mainDateNum) && String(mainDateDisplay).trim() === String(mainDateNum)) {
+    var mainDate = new Date((mainDateNum - 25569) * 86400 * 1000);
+    mainDateDisplay = mainDate.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  }
+  html += '<div class="sched-date-hdr">📅 ' + mainDateDisplay + '</div>';
 
   // Stats row
   html += '<div class="sched-stats">';
@@ -1811,7 +1812,13 @@ function renderSchedule() {
       }
     }
     if (schedDateFilter === 'all' && sortedDates.length > 1) {
-      html += '<div class="sched-date-hdr" style="margin-top:8px">📅 ' + dateKey + (isToday?' <span style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);border-radius:10px;padding:2px 8px;font-size:10px;margin-left:4px">Today</span>':'') + '</div>';
+      var dkDisplay = dateKey;
+      var dkNum = parseFloat(dateKey);
+      if (!isNaN(dkNum) && String(dateKey).trim() === String(dkNum)) {
+        var dkDate = new Date((dkNum - 25569) * 86400 * 1000);
+        dkDisplay = dkDate.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+      }
+      html += '<div class="sched-date-hdr" style="margin-top:8px">📅 ' + dkDisplay + (isToday?' <span style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);border-radius:10px;padding:2px 8px;font-size:10px;margin-left:4px">Today</span>':'') + '</div>';
     }
     ['a','b'].forEach(function(tk) {
     var teams = dateGroups[dateKey];
@@ -1865,13 +1872,9 @@ function renderSchedule() {
   var chipAll = document.getElementById('schedChipAll');
   var chipA   = document.getElementById('schedChipA');
   var chipB   = document.getElementById('schedChipB');
-  var filterRow = document.getElementById('schedFilterRow');
-  if (chipAll && chipA && chipB && filterRow) {
-    filterRow.style.display = 'flex';
-    chipAll.className = 'sched-chip' + (scheduleFilter==='all' ? ' all' : '');
-    chipA.className   = 'sched-chip' + (scheduleFilter==='a'   ? ' ta'  : '');
-    chipB.className   = 'sched-chip' + (scheduleFilter==='b'   ? ' tb'  : '');
-  }
+  if (chipAll) chipAll.className = 'sched-chip' + (scheduleFilter==='all' ? ' all' : '');
+  if (chipA)   chipA.className   = 'sched-chip' + (scheduleFilter==='a'   ? ' ta'  : '');
+  if (chipB)   chipB.className   = 'sched-chip' + (scheduleFilter==='b'   ? ' tb'  : '');
   var contentEl = document.getElementById('scheduleContent');
   if (contentEl) contentEl.innerHTML = html;
   else el.innerHTML = html;

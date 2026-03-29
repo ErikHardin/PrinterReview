@@ -2,7 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIwIiBmaWxsPSIjMTgxQzI3Ii8+CiAgPHJlY3QgeD0iMjIiIHk9IjE4IiB3aWR0aD0iNTYiIGhlaWdodD0iMTAiIHJ4PSI0IiBmaWxsPSIjRUVGMEY4Ii8+CiAgPHJlY3QgeD0iMTgiIHk9IjI4IiB3aWR0aD0iNjQiIGhlaWdodD0iMzYiIHJ4PSI2IiBmaWxsPSIjMjUyQjNEIi8+CiAgPHJlY3QgeD0iMjgiIHk9IjM2IiB3aWR0aD0iNDQiIGhlaWdodD0iNiIgcng9IjMiIGZpbGw9IiM0RjdGRkYiIG9wYWNpdHk9IjAuNiIvPgogIDxyZWN0IHg9IjI4IiB5PSI0NiIgd2lkdGg9IjMwIiBoZWlnaHQ9IjYiIHJ4PSIzIiBmaWxsPSIjNEY3RkZGIiBvcGFjaXR5PSIwLjMiLz4KICA8cmVjdCB4PSIzMCIgeT0iNjQiIHdpZHRoPSI0MCIgaGVpZ2h0PSIyNCIgcng9IjQiIGZpbGw9IiNFRUYwRjgiLz4KICA8cmVjdCB4PSIzNCIgeT0iNjgiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzIiByeD0iMS41IiBmaWxsPSIjOEI5MkFEIi8+CiAgPHJlY3QgeD0iMzQiIHk9Ijc0IiB3aWR0aD0iMjQiIGhlaWdodD0iMyIgcng9IjEuNSIgZmlsbD0iIzhCOTJBRCIvPgogIDxjaXJjbGUgY3g9Ijc0IiBjeT0iMzgiIHI9IjQiIGZpbGw9IiMzNEM5N0EiLz4KPC9zdmc+">
+  <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIwIiBmaWxsPSIjMTgxQzI3Ii8+CiAgPHJlY3QgeD0iMjIiIHk9IjE4IiB3aWR0aD0iNTYiIGhlaWdodD0iMTAiIHJ4PSI0IiBmaWxsPSIjRUVGMEY4Ii8+CiAgPHJlY3QgeD0iMTgiIHk9IjI4IiB3aWR0aD0iNjQiIGhlaWdodD0iMzYiIHJ4PSI2IiBmaWxsPSIjMjUyQjNEIi8+CiAgPHJlY3QgeD0iMjgiIHk9IjM2IiB3aWR0aD0iNDQiIGhlaWdodD0iNiIgcng9IjMiIGZpbGw9IiM0RjdGRkYiIG9wYWNpdHk9IjAuNiIvPgogIDxyZWN0IHg9IjI4IiB5PSI0NiIgd2lkdGg9IjMwIiBoZWlnaHQ9IjYiIHJ4PSIzIiBmaWxsPSIjNEY3RkZGIiBvcGFjaXR5PSIwLjMiLz4KICA8cmVjdCB4PSIzMCIgeT0iNjQiIHdpZHRoPSI0MCIgaGVpZ2h0PSIyNCIgcng9IjQiIGZpbGw9IiNFRUYwRjgiLz4KICA8cmVjdCB4PSIzNCIgeT0iNjgiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzIiByeD0iMS41IiBmaWxsPSIjOEI5MkFEIi8+CiAgPHJlY3QgeD0iMzQiIHk9Ijc0IiB3aWR0aD0iMjQiIGhlaWdodD0iMyIgcng9IjEuNSIgZmlsbD0iIzhCOTJBRCIvPgogIDxjaXJjbGUgY3g9Ijc0IiBjeT0iMzgiIHI9IjQiIGZpbGw9IiMzNEM5N0EiLz4KPC9zdmc+">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Printer Review">
+  <meta name="theme-color" content="#0F1117">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Printer Review</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <!-- Firebase -->
@@ -907,6 +913,7 @@ function hideLoading() {
   populateBldDropdown();
   initPresence();
   initBroadcast();
+  requestWakeLock();
   // Restore admin button if role was saved
   var savedRole = localStorage.getItem('pr_role') || 'reviewer';
   currentUserRole = savedRole;
@@ -1803,6 +1810,27 @@ function schedGoTo(btn) {
   setStatusFilter('all');
   renderAll();
 }
+
+// ── WAKE LOCK ─────────────────────────────────────────────────────────────────
+var wakeLock = null;
+
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+    }
+  } catch(e) {}
+}
+
+function releaseWakeLock() {
+  if (wakeLock) { wakeLock.release(); wakeLock = null; }
+}
+
+// Re-acquire wake lock when page becomes visible again
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'visible') requestWakeLock();
+  else releaseWakeLock();
+});
 
 // ── BROADCAST ──────────────────────────────────────────────────────────────────
 var broadcastToastTimer = null;

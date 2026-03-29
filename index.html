@@ -274,6 +274,47 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .btn-save:disabled{opacity:.25}
 .btn-save:not(:disabled):active{opacity:.8}
 .empty-state{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px}
+.schedule-screen{display:none;position:fixed;top:56px;left:0;right:0;bottom:0;z-index:98;background:var(--bg);overflow-y:auto;padding:12px 12px 80px}
+.schedule-screen.open{display:block}
+.sched-filter-row{display:flex;gap:8px;margin-bottom:14px}
+.sched-chip{flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:transparent;font-family:'Sora',sans-serif;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;text-align:center;transition:all .15s}
+.sched-chip.all{background:var(--surface2);border-color:var(--border2);color:var(--text)}
+.sched-chip.ta{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+.sched-chip.tb{background:var(--conflict-bg);border-color:var(--conflict-border);color:var(--conflict)}
+.sched-stats{display:flex;gap:8px;margin-bottom:14px}
+.sched-stat{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center}
+.sched-stat-num{font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:700;margin-bottom:2px}
+.sched-stat-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
+.sched-team-section{margin-bottom:18px}
+.sched-team-label{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.sched-team-badge{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700}
+.sched-team-badge.a{background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent)}
+.sched-team-badge.b{background:var(--conflict-bg);color:var(--conflict);border:1px solid var(--conflict-border)}
+.sched-team-sub{font-size:11px;color:var(--text3)}
+.sched-floor-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:8px;cursor:pointer;transition:all .15s}
+.sched-floor-card:active{opacity:.85;transform:scale(.985)}
+.sched-floor-card.done{background:var(--keep-bg);border-color:var(--keep-border)}
+.sched-floor-card.inprog{border-color:var(--accent)}
+.sched-floor-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px}
+.sched-floor-name{font-size:15px;font-weight:700}
+.sched-floor-bld{font-size:12px;color:var(--text2);margin-top:2px}
+.sched-status-badge{padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;flex-shrink:0;margin-left:8px;white-space:nowrap}
+.ssb-done{background:var(--keep-bg);color:var(--keep);border:1px solid var(--keep-border)}
+.ssb-prog{background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent)}
+.ssb-late{background:var(--retire-bg);color:var(--retire);border:1px solid var(--retire-border)}
+.ssb-pend{background:var(--surface3);color:var(--text3);border:1px dashed var(--border2)}
+.sched-meta{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.sched-meta-item{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px}
+.sched-partners{display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.sched-partner-chip{background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--text2)}
+.sched-pbar-wrap{margin-bottom:10px}
+.sched-pbar-top{display:flex;justify-content:space-between;margin-bottom:4px;font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+.sched-pbar{height:6px;background:var(--surface3);border-radius:3px;overflow:hidden}
+.sched-pbar-fill{height:100%;border-radius:3px;transition:width .4s}
+.sched-goto{width:100%;padding:9px;border-radius:8px;border:1px solid var(--accent);background:transparent;font-family:'Sora',sans-serif;font-size:12px;font-weight:700;color:var(--accent);cursor:pointer}
+.sched-goto.done{border-color:var(--keep-border);color:var(--keep)}
+.sched-date-hdr{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;padding:4px 2px 12px}
+
 .broadcast-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);z-index:998;background:var(--surface);border:1px solid var(--accent);border-radius:16px;padding:14px 20px;max-width:340px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.5);transition:transform .35s cubic-bezier(.22,.68,0,1.2),opacity .35s ease;opacity:0;pointer-events:none}
 .broadcast-toast.show{transform:translateX(-50%) translateY(0);opacity:1;pointer-events:auto}
 .broadcast-from{font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
@@ -464,6 +505,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
       <button class="hbtn green"   onclick="exportCSV()">CSV</button>
       <button class="hbtn admin-btn" id="btnAdmin" onclick="openAdmin()" style="display:none">&#x1F464;</button>
       <button class="hbtn admin-btn" id="btnBroadcast" onclick="openDlg('broadcastDlg')" style="display:none">&#x1F4E2;</button>
+      <button class="hbtn" id="btnSchedule" onclick="toggleSchedule()">&#x1F4C5;</button>
       <button class="hbtn" id="btnSummary" onclick="toggleSummary()">&#x1F4CA;</button>
       <button class="hbtn purple"  id="conflictBtn" onclick="toggleConflictFilter()" style="display:none">⚠ Conflicts</button>
       <button class="hbtn"         onclick="openDlg('changePinDlg')">🔑</button>
@@ -518,6 +560,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
         <button class="sx" id="searchX" onclick="clearSearch()">✕</button>
       </div>
     </div>
+    <div class="schedule-screen" id="scheduleScreen"></div>
     <div class="sum-screen" id="sumScreen"></div>
     <div class="list" id="printerList"></div>
 
@@ -1462,6 +1505,232 @@ function saveMyNewPin() {
       alert('PIN updated! Use ' + n + ' next time you log in.');
     }).catch(function(e) { err.textContent = 'Error: ' + e.message; });
   });
+}
+
+// ── SCHEDULE ───────────────────────────────────────────────────────────────────
+var scheduleOpen = false;
+var scheduleData = [];
+var scheduleFilter = 'all';
+
+function toggleSchedule() {
+  // Close summary if open
+  if (summaryOpen) toggleSummary();
+  scheduleOpen = !scheduleOpen;
+  var btn = document.getElementById('btnSchedule');
+  var screen = document.getElementById('scheduleScreen');
+  if (scheduleOpen) {
+    document.getElementById('printerList').style.display   = 'none';
+    document.getElementById('filterSection').style.display = 'none';
+    document.getElementById('searchWrap').style.display    = 'none';
+    document.getElementById('progressWrap').style.display  = 'none';
+    document.getElementById('syncBar').style.display       = 'none';
+    document.getElementById('presenceBar').style.display   = 'none';
+    screen.style.display = 'block';
+    btn.style.background  = 'var(--accent-dim)';
+    btn.style.borderColor = 'var(--accent)';
+    btn.style.color       = 'var(--accent)';
+    loadAndRenderSchedule();
+  } else {
+    document.getElementById('printerList').style.display   = 'flex';
+    document.getElementById('filterSection').style.display = 'flex';
+    document.getElementById('searchWrap').style.display    = 'block';
+    document.getElementById('progressWrap').style.display  = 'block';
+    document.getElementById('syncBar').style.display       = 'flex';
+    document.getElementById('presenceBar').style.display   = '';
+    screen.style.display = 'none';
+    btn.style.background  = '';
+    btn.style.borderColor = '';
+    btn.style.color       = '';
+  }
+}
+
+async function loadAndRenderSchedule() {
+  var el = document.getElementById('scheduleScreen');
+  el.innerHTML = '<div class="empty-state"><div class="empty-icon" style="animation:spin 1.5s linear infinite">⚙️</div>Loading schedule…</div>';
+  try {
+    var res = await fetch('schedule.xlsx?t=' + Date.now());
+    if (!res.ok) throw new Error('not found');
+    var buf = await res.arrayBuffer();
+    var wb = XLSX.read(buf, {type:'array'});
+    var rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1, defval:''});
+    if (rows.length < 2) throw new Error('empty');
+    // Map columns case-insensitively
+    var headers = rows[0].map(function(h){ return String(h).toLowerCase().replace(/[\s_]/g,''); });
+    var colIdx = function(names) {
+      for (var i=0; i<names.length; i++) {
+        var idx = headers.indexOf(names[i]);
+        if (idx !== -1) return idx;
+      }
+      return -1;
+    };
+    var iBuilding = colIdx(['building','bldg']);
+    var iFloor    = colIdx(['floor','flr']);
+    var iDate     = colIdx(['walkthroughdate','date','scheduledate']);
+    var iTeam     = colIdx(['walkthroughteam','team','printer']);
+    var iTime     = colIdx(['targetwalkthroughtime','targettime','time','walkthroughtime']);
+    var iPartners = colIdx(['walkthroughpartnersforfloor','partners','walkthroughpartners']);
+    scheduleData = [];
+    rows.slice(1).forEach(function(row) {
+      var bld = iBuilding !== -1 ? String(row[iBuilding]||'').trim() : '';
+      if (!bld) return;
+      var timeVal = iTime !== -1 ? String(row[iTime]||'').trim() : '';
+      // Handle Excel serial time
+      if (!isNaN(parseFloat(timeVal)) && timeVal !== '') {
+        timeVal = excelTimeToStr(parseFloat(timeVal));
+      }
+      var partnersRaw = iPartners !== -1 ? String(row[iPartners]||'').trim() : '';
+      var partners = partnersRaw ? partnersRaw.split(/[,;]+/).map(function(p){ return p.trim(); }).filter(Boolean) : [];
+      var dateRaw = iDate !== -1 ? row[iDate] : '';
+      var dateStr = '';
+      if (dateRaw) {
+        var d = parseLeaseDate(String(dateRaw));
+        if (d) dateStr = d.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+        else dateStr = String(dateRaw);
+      }
+      scheduleData.push({
+        building: bld,
+        floor: iFloor !== -1 ? String(row[iFloor]||'').trim() : '',
+        date: dateStr,
+        team: iTeam !== -1 ? String(row[iTeam]||'').trim() : '',
+        time: timeVal,
+        partners: partners
+      });
+    });
+    renderSchedule();
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📅</div><div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">No schedule loaded yet.</div><div style="font-size:13px;color:var(--text2)">Ask your coordinator to upload schedule.</div></div>';
+  }
+}
+
+function excelTimeToStr(val) {
+  // Excel stores time as fraction of a day
+  var totalMins = Math.round(val * 24 * 60);
+  var h = Math.floor(totalMins / 60) % 24;
+  var m = totalMins % 60;
+  var ampm = h >= 12 ? 'PM' : 'AM';
+  var h12 = h % 12 || 12;
+  return h12 + ':' + (m < 10 ? '0' : '') + m + ' ' + ampm;
+}
+
+function setSchedFilter(f) {
+  scheduleFilter = f;
+  renderSchedule();
+}
+
+function getSchedStatus(item) {
+  var bldPrinters = printers.filter(function(p){ return p.building===item.building && fmtFloor(p.floor)===fmtFloor(item.floor); });
+  if (!bldPrinters.length) return {status:'pending', pct:0, decided:0, total:0};
+  var decided = bldPrinters.filter(function(p){ return getDecisionsFor(p.id).length>0; }).length;
+  var pct = Math.round(decided/bldPrinters.length*100);
+  var status = pct===100 ? 'done' : pct>0 ? 'inprog' : 'pending';
+  return {status:status, pct:pct, decided:decided, total:bldPrinters.length};
+}
+
+function renderSchedule() {
+  var el = document.getElementById('scheduleScreen');
+  if (!scheduleData.length) return;
+
+  var filtered = scheduleFilter === 'all' ? scheduleData : scheduleData.filter(function(s){
+    return s.team.toLowerCase().replace(/\s/g,'') === 'team' + scheduleFilter ||
+           s.team.toLowerCase() === scheduleFilter ||
+           s.team.toLowerCase().includes(scheduleFilter);
+  });
+
+  // Stats
+  var total = filtered.length;
+  var done = 0, inprog = 0;
+  filtered.forEach(function(s){ var st=getSchedStatus(s); if(st.status==='done')done++; else if(st.status==='inprog')inprog++; });
+  var pct = total ? Math.round(done/total*100) : 0;
+
+  // Get date from first item
+  var dateStr = scheduleData[0] ? scheduleData[0].date : '';
+
+  // Group by team
+  var teams = {};
+  filtered.forEach(function(s){
+    var tk = s.team.toLowerCase().includes('a') ? 'a' : 'b';
+    if (!teams[tk]) teams[tk] = [];
+    teams[tk].push(s);
+  });
+
+  var html = '';
+  html += '<div class="sched-date-hdr">📅 ' + (dateStr || 'Review Schedule') + '</div>';
+
+  // Stats row
+  html += '<div class="sched-stats">';
+  html += '<div class="sched-stat"><div class="sched-stat-num" style="color:var(--accent)">' + total + '</div><div class="sched-stat-lbl">Floors</div></div>';
+  html += '<div class="sched-stat"><div class="sched-stat-num" style="color:var(--keep)">' + done + '</div><div class="sched-stat-lbl">Complete</div></div>';
+  html += '<div class="sched-stat"><div class="sched-stat-num" style="color:var(--text3)">' + (total-done) + '</div><div class="sched-stat-lbl">Remaining</div></div>';
+  html += '<div class="sched-stat"><div class="sched-stat-num" style="color:var(--accent)">' + pct + '%</div><div class="sched-stat-lbl">Progress</div></div>';
+  html += '</div>';
+
+  // Filter chips
+  html += '<div class="sched-filter-row">';
+  html += '<button class="sched-chip ' + (scheduleFilter==="all"?"all":"") + '" onclick="setSchedFilter(&quot;all&quot;)">All Teams</button>';
+  html += '<button class="sched-chip ' + (scheduleFilter==="a"?"ta":"") + '" onclick="setSchedFilter(&quot;a&quot;)">&#x1F535; Team A</button>';
+  html += '<button class="sched-chip ' + (scheduleFilter==="b"?"tb":"") + '" onclick="setSchedFilter(&quot;b&quot;)">&#x1F7E3; Team B</button>';
+  html += '</div>';
+
+  // Team sections
+  ['a','b'].forEach(function(tk) {
+    if (!teams[tk] || !teams[tk].length) return;
+    var tDone = teams[tk].filter(function(s){ return getSchedStatus(s).status==='done'; }).length;
+    html += '<div class="sched-team-section">';
+    html += '<div class="sched-team-label"><span class="sched-team-badge ' + tk + '">Team ' + tk.toUpperCase() + '</span>';
+    html += '<span class="sched-team-sub">' + tDone + '/' + teams[tk].length + ' floors complete</span></div>';
+
+    teams[tk].forEach(function(item) {
+      var st = getSchedStatus(item);
+      var cardCls = 'sched-floor-card' + (st.status==='done'?' done':st.status==='inprog'?' inprog':'');
+      var badgeCls, badgeTxt;
+      if(st.status==='done'){badgeCls='ssb-done';badgeTxt='✓ Complete';}
+      else if(st.status==='inprog'){badgeCls='ssb-prog';badgeTxt='● In Progress';}
+      else{badgeCls='ssb-pend';badgeTxt='Upcoming';}
+      var fillColor = st.status==='done'?'var(--keep)':st.status==='inprog'?'var(--accent)':'var(--border2)';
+
+      html += '<div class="' + cardCls + '">';
+      html += '<div class="sched-floor-top"><div>';
+      html += '<div class="sched-floor-name">Floor ' + fmtFloor(item.floor) + '</div>';
+      html += '<div class="sched-floor-bld">' + item.building + '</div>';
+      html += '</div><span class="sched-status-badge ' + badgeCls + '">' + badgeTxt + '</span></div>';
+
+      html += '<div class="sched-meta">';
+      if(item.time) html += '<div class="sched-meta-item">⏰ ' + item.time + '</div>';
+      html += '<div class="sched-meta-item">🖨️ ' + st.total + ' printers</div>';
+      html += '</div>';
+
+      if(item.partners.length) {
+        html += '<div class="sched-partners">👥 ';
+        item.partners.forEach(function(p){ html += '<span class="sched-partner-chip">' + p + '</span>'; });
+        html += '</div>';
+      }
+
+      html += '<div class="sched-pbar-wrap">';
+      html += '<div class="sched-pbar-top"><span>Progress</span><span>' + st.decided + '/' + st.total + ' · ' + st.pct + '%</span></div>';
+      html += '<div class="sched-pbar"><div class="sched-pbar-fill" style="width:' + st.pct + '%;background:' + fillColor + '"></div></div>';
+      html += '</div>';
+
+      var gotoCls = 'sched-goto' + (st.status==='done'?' done':'');
+      var gotoTxt = st.status==='done' ? '✓ View completed floor' : '→ Go to this floor';
+      html += '<button class="' + gotoCls + '" data-bld="' + item.building.replace(/"/g,'&quot;') + '" data-fl="' + item.floor.replace(/"/g,'&quot;') + '" onclick="schedGoTo(this)">'+gotoTxt+'</button>';
+      html += '</div>';
+    });
+
+    html += '</div>';
+  });
+
+  el.innerHTML = html;
+}
+
+function schedGoTo(btn) {
+  var bld = btn.getAttribute('data-bld');
+  var fl  = btn.getAttribute('data-fl');
+  scheduleOpen = false;
+  toggleSchedule();
+  curBld = bld; curFlr = String(fl); statusFilter = 'all';
+  document.getElementById('bldSelect').value = bld;
+  setStatusFilter('all');
+  renderAll();
 }
 
 // ── BROADCAST ──────────────────────────────────────────────────────────────────

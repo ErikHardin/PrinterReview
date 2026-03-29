@@ -303,6 +303,8 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .ssb-prog{background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent)}
 .ssb-late{background:var(--retire-bg);color:var(--retire);border:1px solid var(--retire-border)}
 .ssb-pend{background:var(--surface3);color:var(--text3);border:1px dashed var(--border2)}
+.ssb-late{background:var(--retire-bg);color:var(--retire);border:1px solid var(--retire-border)}
+.sched-floor-card.behind{border-color:var(--retire)}
 .sched-meta{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px}
 .sched-meta-item{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px}
 .sched-partners{display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap}
@@ -1511,6 +1513,7 @@ function saveMyNewPin() {
 var scheduleOpen = false;
 var scheduleData = [];
 var scheduleFilter = 'all';
+var schedDateFilter = 'today';
 
 function toggleSchedule() {
   // Close summary if open
@@ -1611,17 +1614,56 @@ function excelTimeToStr(val) {
   return h12 + ':' + (m < 10 ? '0' : '') + m + ' ' + ampm;
 }
 
+function setSchedDateFilter(f) {
+  schedDateFilter = f;
+  renderSchedule();
+}
+
 function setSchedFilter(f) {
   scheduleFilter = f;
   renderSchedule();
 }
 
+function parseSchedStartTime(timeStr, dateStr) {
+  if (!timeStr) return null;
+  var match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!match) return null;
+  var h = parseInt(match[1]);
+  var m = parseInt(match[2]);
+  var ampm = match[3].toUpperCase();
+  if (ampm === 'PM' && h !== 12) h += 12;
+  if (ampm === 'AM' && h === 12) h = 0;
+  var now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
+}
+
 function getSchedStatus(item) {
   var bldPrinters = printers.filter(function(p){ return p.building===item.building && fmtFloor(p.floor)===fmtFloor(item.floor); });
-  if (!bldPrinters.length) return {status:'pending', pct:0, decided:0, total:0};
+  if (!bldPrinters.length) {
+    // No printers matched - check time for behind status
+    var start = parseSchedStartTime(item.time);
+    var isTodaySched = item.date === new Date().toISOString().slice(0,10) || !item.date;
+    if (isTodaySched && start && new Date() > start) return {status:'behind', pct:0, decided:0, total:0};
+    return {status:'pending', pct:0, decided:0, total:0};
+  }
   var decided = bldPrinters.filter(function(p){ return getDecisionsFor(p.id).length>0; }).length;
   var pct = Math.round(decided/bldPrinters.length*100);
-  var status = pct===100 ? 'done' : pct>0 ? 'inprog' : 'pending';
+  var status;
+  if (pct === 100) {
+    status = 'done';
+  } else if (pct > 0) {
+    status = 'inprog';
+  } else {
+    // Check if start time has passed for today's schedule
+    var start = parseSchedStartTime(item.time);
+    var todayStr = new Date().toISOString().slice(0,10);
+    var isTodaySched = item.date === todayStr || !item.date;
+    if (isTodaySched && start && new Date() > start) {
+      status = 'behind';
+    } else {
+      status = 'pending';
+    }
+  }
   return {status:status, pct:pct, decided:decided, total:bldPrinters.length};
 }
 
@@ -1629,10 +1671,21 @@ function renderSchedule() {
   var el = document.getElementById('scheduleScreen');
   if (!scheduleData.length) return;
 
-  var filtered = scheduleFilter === 'all' ? scheduleData : scheduleData.filter(function(s){
-    return s.team.toLowerCase().replace(/\s/g,'') === 'team' + scheduleFilter ||
-           s.team.toLowerCase() === scheduleFilter ||
-           s.team.toLowerCase().includes(scheduleFilter);
+  var todayStr = new Date().toISOString().slice(0,10);
+  var filtered = scheduleData.filter(function(s) {
+    var teamOk = scheduleFilter === 'all' ||
+                 s.team.toLowerCase().replace(/\s/g,'') === 'team' + scheduleFilter ||
+                 s.team.toLowerCase() === scheduleFilter ||
+                 s.team.toLowerCase().includes(scheduleFilter);
+    // Parse date from item for comparison
+    var itemDate = '';
+    if (s.date) {
+      var d = parseLeaseDate(String(s.date));
+      if (d) itemDate = d.toISOString().slice(0,10);
+      else itemDate = String(s.date);
+    }
+    var dateOk = schedDateFilter === 'all' || itemDate === todayStr || !s.date;
+    return teamOk && dateOk;
   });
 
   // Stats
@@ -1644,15 +1697,27 @@ function renderSchedule() {
   // Get date from first item
   var dateStr = scheduleData[0] ? scheduleData[0].date : '';
 
-  // Group by team
-  var teams = {};
+  // Group by date then team
+  var dateGroups = {};
   filtered.forEach(function(s){
+    var d = '';
+    if (s.date) {
+      var pd = parseLeaseDate(String(s.date));
+      d = pd ? pd.toISOString().slice(0,10) : String(s.date);
+    }
+    if (!dateGroups[d]) dateGroups[d] = {};
     var tk = s.team.toLowerCase().includes('a') ? 'a' : 'b';
-    if (!teams[tk]) teams[tk] = [];
-    teams[tk].push(s);
+    if (!dateGroups[d][tk]) dateGroups[d][tk] = [];
+    dateGroups[d][tk].push(s);
   });
+  var sortedDates = Object.keys(dateGroups).sort();
 
   var html = '';
+  // Date toggle
+  html += '<div style="display:flex;gap:6px;margin-bottom:14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:4px">';
+  html += '<button style="flex:1;padding:8px;border-radius:7px;border:none;font-family:Sora,sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;background:' + (schedDateFilter==='today'?'var(--surface)':'transparent') + ';color:' + (schedDateFilter==='today'?'var(--accent)':'var(--text3)') + '" onclick="setSchedDateFilter(&quot;today&quot;)">📅 Today</button>';
+  html += '<button style="flex:1;padding:8px;border-radius:7px;border:none;font-family:Sora,sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;background:' + (schedDateFilter==='all'?'var(--surface)':'transparent') + ';color:' + (schedDateFilter==='all'?'var(--text)':'var(--text3)') + '" onclick="setSchedDateFilter(&quot;all&quot;)">All Dates</button>';
+  html += '</div>';
   html += '<div class="sched-date-hdr">📅 ' + (dateStr || 'Review Schedule') + '</div>';
 
   // Stats row
@@ -1670,8 +1735,15 @@ function renderSchedule() {
   html += '<button class="sched-chip ' + (scheduleFilter==="b"?"tb":"") + '" onclick="setSchedFilter(&quot;b&quot;)">&#x1F7E3; Team B</button>';
   html += '</div>';
 
-  // Team sections
-  ['a','b'].forEach(function(tk) {
+  // Date + team sections
+  sortedDates.forEach(function(dateKey) {
+    var isToday = dateKey === new Date().toISOString().slice(0,10);
+    if (schedDateFilter === 'all' && sortedDates.length > 1) {
+      var displayDate = dateKey ? new Date(dateKey + 'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}) : '';
+      html += '<div class="sched-date-hdr" style="margin-top:8px">📅 ' + displayDate + (isToday?' <span style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);border-radius:10px;padding:2px 8px;font-size:10px;margin-left:4px">Today</span>':'') + '</div>';
+    }
+    ['a','b'].forEach(function(tk) {
+    var teams = dateGroups[dateKey];
     if (!teams[tk] || !teams[tk].length) return;
     var tDone = teams[tk].filter(function(s){ return getSchedStatus(s).status==='done'; }).length;
     html += '<div class="sched-team-section">';
@@ -1680,12 +1752,13 @@ function renderSchedule() {
 
     teams[tk].forEach(function(item) {
       var st = getSchedStatus(item);
-      var cardCls = 'sched-floor-card' + (st.status==='done'?' done':st.status==='inprog'?' inprog':'');
+      var cardCls = 'sched-floor-card' + (st.status==='done'?' done':st.status==='inprog'?' inprog':st.status==='behind'?' behind':'');
       var badgeCls, badgeTxt;
       if(st.status==='done'){badgeCls='ssb-done';badgeTxt='✓ Complete';}
       else if(st.status==='inprog'){badgeCls='ssb-prog';badgeTxt='● In Progress';}
+      else if(st.status==='behind'){badgeCls='ssb-late';badgeTxt='⚠ Behind';}
       else{badgeCls='ssb-pend';badgeTxt='Upcoming';}
-      var fillColor = st.status==='done'?'var(--keep)':st.status==='inprog'?'var(--accent)':'var(--border2)';
+      var fillColor = st.status==='done'?'var(--keep)':st.status==='inprog'?'var(--accent)':st.status==='behind'?'var(--retire)':'var(--border2)';
 
       html += '<div class="' + cardCls + '">';
       html += '<div class="sched-floor-top"><div>';
@@ -1714,7 +1787,8 @@ function renderSchedule() {
     });
 
     html += '</div>';
-  });
+    }); // end team forEach
+  }); // end date forEach
 
   el.innerHTML = html;
 }

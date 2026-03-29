@@ -229,6 +229,11 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .dchip-v.w{color:var(--warn)}
 
 /* Conflict panel */
+.notes-wrap{margin:10px 18px 0;display:none}
+.notes-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.notes-input{width:100%;padding:10px 12px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface2);font-family:'Sora',sans-serif;font-size:13px;color:var(--text);outline:none;resize:none;-webkit-appearance:none}
+.notes-input:focus{border-color:var(--accent)}
+.notes-input::placeholder{color:var(--text3)}
 .conflict-panel{margin:10px 18px 0;background:var(--conflict-bg);border:1px solid var(--conflict-border);border-radius:10px;padding:10px 13px}
 .conflict-title{font-size:11px;font-weight:700;color:var(--conflict);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em}
 .conflict-row{display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid rgba(200,123,255,.15)}
@@ -616,6 +621,10 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
       <div class="conflict-panel" id="conflictPanel" style="display:none">
         <div class="conflict-title">⚠️ Conflict — reviewers disagree</div>
         <div id="conflictRows"></div>
+      </div>
+      <div class="notes-wrap" id="notesWrap">
+        <div class="notes-label">📝 Notes</div>
+        <textarea class="notes-input" id="notesInput" rows="2" maxlength="200" placeholder="e.g. Move to Room 412, check with department..."></textarea>
       </div>
       <div class="conflict-panel" id="othersPanel" style="display:none;background:var(--accent-dim);border-color:var(--accent)">
         <div class="conflict-title" style="color:var(--accent)">👥 Others have reviewed this printer</div>
@@ -1127,6 +1136,10 @@ function openModal(id){
   const mp=document.getElementById('mPages');mp.textContent=fmt(p.avgPages)+'/mo';mp.className='dchip-v'+(hi(p.avgPages)?' w':'');
   const epicEl=document.getElementById('mEpic');epicEl.textContent=p.epic>0?p.epic+' tray'+(p.epic!==1?'s':''):'None';epicEl.style.color=p.epic>0?'var(--accent)':'';
   document.getElementById('mSerial').textContent=p.serial||'—';
+  // Restore notes if my decision had notes
+  var myDecNotes = myDec && myDec.notes ? myDec.notes : '';
+  var ni2=document.getElementById('notesInput');if(ni2)ni2.value=myDecNotes;
+  var nw2=document.getElementById('notesWrap');if(nw2)nw2.style.display=(myDec&&myDec.status==='keep')?'block':'none';
   const leEl=document.getElementById('mLeaseEnd');leEl.textContent=fmtLeaseDate(p.leaseEnd)||'—';leEl.style.color=leaseColor(p.leaseEnd);
 
   // Conflict panel
@@ -1143,7 +1156,7 @@ function openModal(id){
       const decLabel=d.status==='keep'?'✓ Keep':d.status==='retire'?'✗ Retire':'? Not Found';
       const decCls=d.status==='keep'?'k':d.status==='retire'?'r':'nf';
       const replLabel=d.securePrint?'🔒 Secure Print':rp2?rp2.dnumber:'';
-      return '<div class="conflict-row"><span class="conflict-reviewer">'+d.reviewer+'</span><span class="conflict-dec '+decCls+'">'+decLabel+'</span>'+(replLabel?'<span class="conflict-repl">'+replLabel+'</span>':'')+'</div>';
+      return '<div class="conflict-row"><span class="conflict-reviewer">'+d.reviewer+'</span><span class="conflict-dec '+decCls+'">'+decLabel+'</span>'+(replLabel?'<span class="conflict-repl">'+replLabel+'</span>':'')+(notesTxt?'<span class="conflict-repl" style="color:var(--text2)">'+notesTxt+'</span>':'')+'</div>';
     }).join('');
   } else { op.style.display='none'; }
 
@@ -1283,7 +1296,7 @@ function doReset(){
 //  EXPORT CSV (only decided printers, shows all reviewers)
 // ══════════════════════════════════════════════════════════
 function exportCSV(){
-  const rows=[['Reviewer','Institute','Department','Building','Floor','Room','Model','DNumber','BNumber','SerialNumber','LeaseEnd','AvgPagesPrinted','EpicTrays','Decision','DecisionDate','SecurePrint','ReplacementModel','ReplacementDNumber','ReplacementBNumber','Conflict']];
+  const rows=[['Reviewer','Institute','Department','Building','Floor','Room','Model','DNumber','BNumber','SerialNumber','LeaseEnd','AvgPagesPrinted','EpicTrays','Decision','DecisionDate','Notes','SecurePrint','ReplacementModel','ReplacementDNumber','ReplacementBNumber','Conflict']];
   printers.forEach(p=>{
     const decs=getDecisionsFor(p.id);
     if(!decs.length)return; // skip pending
@@ -1292,7 +1305,7 @@ function exportCSV(){
     const isConflict=hasConflict(p.id);
     const rp=d.replacementId?printers.find(x=>x.dnumber===d.replacementId):null;
     const decDate=d.ts?new Date(d.ts).toLocaleDateString('en-US',{year:'numeric',month:'2-digit',day:'2-digit'}):'';
-    rows.push([d.reviewer,p.institute,p.dept,p.building,p.floor,p.room,p.model,p.dnumber,p.bnumber,p.serial||'',p.leaseEnd||'',p.avgPages,p.epic||0,d.status,decDate,d.securePrint?'YES':'',rp?.model||'',rp?.dnumber||'',rp?.bnumber||'',isConflict?'YES':'']);
+    rows.push([d.reviewer,p.institute,p.dept,p.building,p.floor,p.room,p.model,p.dnumber,p.bnumber,p.serial||'',p.leaseEnd||'',p.avgPages,p.epic||0,d.status,decDate,d.notes||'',d.securePrint?'YES':'',rp?.model||'',rp?.dnumber||'',rp?.bnumber||'',isConflict?'YES':'']);
   });
   const csv=rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));

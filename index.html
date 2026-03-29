@@ -1578,8 +1578,7 @@ async function loadAndRenderSchedule() {
       if (!isNaN(parseFloat(timeVal)) && timeVal !== '') {
         timeVal = excelTimeToStr(parseFloat(timeVal));
       }
-      var partnersRaw = iPartners !== -1 ? String(row[iPartners]||'').trim() : '';
-      var partners = partnersRaw ? partnersRaw.split(/[,;]+/).map(function(p){ return p.trim(); }).filter(Boolean) : [];
+      var partners = iPartners !== -1 ? String(row[iPartners]||'').trim() : '';
       var dateRaw = iDate !== -1 ? row[iDate] : '';
       var dateStr = '';
       if (dateRaw) {
@@ -1699,10 +1698,8 @@ function renderSchedule() {
       html += '<div class="sched-meta-item">🖨️ ' + st.total + ' printers</div>';
       html += '</div>';
 
-      if(item.partners.length) {
-        html += '<div class="sched-partners">👥 ';
-        item.partners.forEach(function(p){ html += '<span class="sched-partner-chip">' + p + '</span>'; });
-        html += '</div>';
+      if(item.partners) {
+        html += '<div class="sched-partners" style="font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:10px">👥 ' + item.partners + '</div>';
       }
 
       html += '<div class="sched-pbar-wrap">';

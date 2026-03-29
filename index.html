@@ -568,7 +568,14 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
         <button class="sx" id="searchX" onclick="clearSearch()">✕</button>
       </div>
     </div>
-    <div class="schedule-screen" id="scheduleScreen"></div>
+    <div class="schedule-screen" id="scheduleScreen">
+      <div class="sched-filter-row" id="schedFilterRow" style="display:none">
+        <button class="sched-chip" id="schedChipAll" onclick="setSchedFilter('all')">All Teams</button>
+        <button class="sched-chip" id="schedChipA"   onclick="setSchedFilter('a')">&#x1F535; Team A</button>
+        <button class="sched-chip" id="schedChipB"   onclick="setSchedFilter('b')">&#x1F7E3; Team B</button>
+      </div>
+      <div id="scheduleContent"></div>
+    </div>
     <div class="sum-screen" id="sumScreen"></div>
     <div class="list" id="printerList"></div>
 
@@ -1441,7 +1448,20 @@ function buildSummary() {
     html += '</div></div>';
   }
 
-  el.innerHTML = html;
+  // Update chip styles
+  var chipAll = document.getElementById('schedChipAll');
+  var chipA   = document.getElementById('schedChipA');
+  var chipB   = document.getElementById('schedChipB');
+  var filterRow = document.getElementById('schedFilterRow');
+  if (chipAll && chipA && chipB && filterRow) {
+    filterRow.style.display = 'flex';
+    chipAll.className = 'sched-chip' + (scheduleFilter==='all' ? ' all' : '');
+    chipA.className   = 'sched-chip' + (scheduleFilter==='a'   ? ' ta'  : '');
+    chipB.className   = 'sched-chip' + (scheduleFilter==='b'   ? ' tb'  : '');
+  }
+  var contentEl = document.getElementById('scheduleContent');
+  if (contentEl) contentEl.innerHTML = html;
+  else el.innerHTML = html;
   } catch(e) {
     el.innerHTML = '<div style="padding:20px;color:#FF5B5B;font-size:13px;word-break:break-all">Error: ' + e.message + '<br><br>Stack: ' + e.stack + '</div>';
   }
@@ -1556,7 +1576,7 @@ function toggleSchedule() {
 
 async function loadAndRenderSchedule() {
   var el = document.getElementById('scheduleScreen');
-  el.innerHTML = '<div class="empty-state"><div class="empty-icon" style="animation:spin 1.5s linear infinite">⚙️</div>Loading schedule…</div>';
+  var ce2 = document.getElementById('scheduleContent') || el; ce2.innerHTML = '<div class="empty-state"><div class="empty-icon" style="animation:spin 1.5s linear infinite">⚙️</div>Loading schedule…</div>';
   try {
     var res = await fetch('/PrinterReview/schedule.xlsx?t=' + Date.now());
     if (!res.ok) throw new Error('not found');
@@ -1621,7 +1641,8 @@ async function loadAndRenderSchedule() {
     });
     renderSchedule();
   } catch(e) {
-    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📅</div><div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">No schedule loaded yet.</div><div style="font-size:13px;color:var(--text2)">Ask your coordinator to upload schedule.</div></div>';
+    var ce = document.getElementById('scheduleContent') || el;
+    ce.innerHTML = '<div class="empty-state"><div class="empty-icon">📅</div><div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">No schedule loaded yet.</div><div style="font-size:13px;color:var(--text2)">Ask your coordinator to upload schedule.</div></div>';
   }
 }
 
@@ -1770,12 +1791,7 @@ function renderSchedule() {
   html += '<div class="sched-stat"><div class="sched-stat-num" style="color:var(--accent)">' + pct + '%</div><div class="sched-stat-lbl">Progress</div></div>';
   html += '</div>';
 
-  // Filter chips
-  html += '<div class="sched-filter-row">';
-  html += '<button class="sched-chip ' + (scheduleFilter==="all"?"all":"") + '" onclick="setSchedFilter(&quot;all&quot;)">All Teams</button>';
-  html += '<button class="sched-chip ' + (scheduleFilter==="a"?"ta":"") + '" onclick="setSchedFilter(&quot;a&quot;)">&#x1F535; Team A</button>';
-  html += '<button class="sched-chip ' + (scheduleFilter==="b"?"tb":"") + '" onclick="setSchedFilter(&quot;b&quot;)">&#x1F7E3; Team B</button>';
-  html += '</div>';
+
 
   // Date + team sections
   sortedDates.forEach(function(dateKey) {
@@ -1845,7 +1861,20 @@ function renderSchedule() {
     }); // end team forEach
   }); // end date forEach
 
-  el.innerHTML = html;
+  // Update chip styles
+  var chipAll = document.getElementById('schedChipAll');
+  var chipA   = document.getElementById('schedChipA');
+  var chipB   = document.getElementById('schedChipB');
+  var filterRow = document.getElementById('schedFilterRow');
+  if (chipAll && chipA && chipB && filterRow) {
+    filterRow.style.display = 'flex';
+    chipAll.className = 'sched-chip' + (scheduleFilter==='all' ? ' all' : '');
+    chipA.className   = 'sched-chip' + (scheduleFilter==='a'   ? ' ta'  : '');
+    chipB.className   = 'sched-chip' + (scheduleFilter==='b'   ? ' tb'  : '');
+  }
+  var contentEl = document.getElementById('scheduleContent');
+  if (contentEl) contentEl.innerHTML = html;
+  else el.innerHTML = html;
 }
 
 function schedGoTo(btn) {

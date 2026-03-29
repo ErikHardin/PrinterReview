@@ -1605,19 +1605,15 @@ async function loadAndRenderSchedule() {
           if (d) dateStr = d.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
           else dateStr = String(dateRaw);
         } else {
-          // Already a readable date string
-          var d2 = new Date(String(dateRaw));
-          if (!isNaN(d2.getTime())) {
-            dateStr = d2.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-          } else {
-            dateStr = String(dateRaw);
-          }
+          // Already a readable date string - use as-is for display
+          dateStr = String(dateRaw).trim();
         }
       }
       scheduleData.push({
         building: bld,
         floor: iFloor !== -1 ? String(row[iFloor]||'').trim() : '',
         date: dateStr,
+        dateRaw: String(dateRaw||'').trim(),
         team: iTeam !== -1 ? String(row[iTeam]||'').trim() : '',
         time: timeVal,
         partners: partners
@@ -1696,7 +1692,10 @@ function renderSchedule() {
   var el = document.getElementById('scheduleScreen');
   if (!scheduleData.length) return;
 
-  var todayStr = new Date().toISOString().slice(0,10);
+  // Get today in local time YYYY-MM-DD
+  var now = new Date();
+  var todayLocal = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+
   var filtered = scheduleData.filter(function(s) {
     var tl = s.team.toLowerCase().trim();
     var teamOk = scheduleFilter === 'all' ||
@@ -1704,14 +1703,33 @@ function renderSchedule() {
                  tl === 'team ' + scheduleFilter ||
                  tl === 'team' + scheduleFilter ||
                  tl.startsWith(scheduleFilter);
-    // Parse date from item for comparison
-    var itemDate = '';
-    if (s.date) {
-      var d = parseLeaseDate(String(s.date));
-      if (d) itemDate = d.toISOString().slice(0,10);
-      else itemDate = String(s.date);
+
+    // Compare date - try to parse the raw date value
+    var dateOk = schedDateFilter === 'all';
+    if (!dateOk) {
+      var rawD = s.dateRaw || s.date || '';
+      // Try parsing as Excel serial number
+      var num = parseFloat(rawD);
+      if (!isNaN(num) && String(rawD).trim() === String(num)) {
+        var d = new Date((num - 25569) * 86400 * 1000);
+        var dLocal = d.getUTCFullYear() + '-' + String(d.getUTCMonth()+1).padStart(2,'0') + '-' + String(d.getUTCDate()).padStart(2,'0');
+        dateOk = dLocal === todayLocal;
+      } else if (rawD) {
+        // Text date - try to extract date parts
+        var parsed = new Date(rawD);
+        if (!isNaN(parsed.getTime())) {
+          var pLocal = parsed.getFullYear() + '-' + String(parsed.getMonth()+1).padStart(2,'0') + '-' + String(parsed.getDate()).padStart(2,'0');
+          dateOk = pLocal === todayLocal;
+        } else {
+          // Try matching today's formatted date string
+          var todayFmt = now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+          dateOk = rawD.toLowerCase().includes(String(now.getDate())) && 
+                   rawD.toLowerCase().includes(String(now.getFullYear()));
+        }
+      } else {
+        dateOk = true; // no date = always show
+      }
     }
-    var dateOk = schedDateFilter === 'all' || itemDate === todayStr || !s.date;
     return teamOk && dateOk;
   });
 
@@ -1727,13 +1745,10 @@ function renderSchedule() {
   // Group by date then team
   var dateGroups = {};
   filtered.forEach(function(s){
-    var d = '';
-    if (s.date) {
-      var pd = parseLeaseDate(String(s.date));
-      d = pd ? pd.toISOString().slice(0,10) : String(s.date);
-    }
+    var d = s.dateRaw || s.date || '';
     if (!dateGroups[d]) dateGroups[d] = {};
-    var tl2 = s.team.toLowerCase().trim(); var tk = (tl2 === 'a' || tl2 === 'team a' || tl2 === 'teama') ? 'a' : 'b';
+    var tl2 = s.team.toLowerCase().trim();
+    var tk = (tl2 === 'a' || tl2 === 'team a' || tl2 === 'teama') ? 'a' : 'b';
     if (!dateGroups[d][tk]) dateGroups[d][tk] = [];
     dateGroups[d][tk].push(s);
   });
@@ -1764,10 +1779,23 @@ function renderSchedule() {
 
   // Date + team sections
   sortedDates.forEach(function(dateKey) {
-    var isToday = dateKey === new Date().toISOString().slice(0,10);
+    // Check if this date group matches today
+    var rawCheck = dateKey;
+    var num2 = parseFloat(rawCheck);
+    var isToday = false;
+    if (!isNaN(num2) && String(rawCheck).trim() === String(num2)) {
+      var dCheck = new Date((num2 - 25569) * 86400 * 1000);
+      isToday = dCheck.getUTCFullYear() === now.getFullYear() && dCheck.getUTCMonth() === now.getMonth() && dCheck.getUTCDate() === now.getDate();
+    } else {
+      var parsed2 = new Date(rawCheck);
+      if (!isNaN(parsed2.getTime())) {
+        isToday = parsed2.getFullYear() === now.getFullYear() && parsed2.getMonth() === now.getMonth() && parsed2.getDate() === now.getDate();
+      } else {
+        isToday = rawCheck.includes(String(now.getDate())) && rawCheck.includes(String(now.getFullYear()));
+      }
+    }
     if (schedDateFilter === 'all' && sortedDates.length > 1) {
-      var displayDate = dateKey ? new Date(dateKey + 'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}) : '';
-      html += '<div class="sched-date-hdr" style="margin-top:8px">📅 ' + displayDate + (isToday?' <span style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);border-radius:10px;padding:2px 8px;font-size:10px;margin-left:4px">Today</span>':'') + '</div>';
+      html += '<div class="sched-date-hdr" style="margin-top:8px">📅 ' + dateKey + (isToday?' <span style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);border-radius:10px;padding:2px 8px;font-size:10px;margin-left:4px">Today</span>':'') + '</div>';
     }
     ['a','b'].forEach(function(tk) {
     var teams = dateGroups[dateKey];

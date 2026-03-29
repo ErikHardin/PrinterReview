@@ -705,7 +705,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 // ══════════════════════════════════════════════════════════
 //  CONFIG
 // ══════════════════════════════════════════════════════════
-const EXCEL_URL = 'https://erikhardin.github.io/PrinterReview/printers.xlsx';
+const EXCEL_URL = 'https://raw.githubusercontent.com/erikhardin/PrinterReview/main/printers.xlsx';
 const FIREBASE_URL = 'https://printerreview-5c381-default-rtdb.firebaseio.com';
 const SK = { pin:'pr_pin', auth:'pr_auth', name:'pr_name' };
 const DEFAULT_PIN = '1234';
@@ -1558,7 +1558,7 @@ async function loadAndRenderSchedule() {
   var el = document.getElementById('scheduleScreen');
   el.innerHTML = '<div class="empty-state"><div class="empty-icon" style="animation:spin 1.5s linear infinite">⚙️</div>Loading schedule…</div>';
   try {
-    var res = await fetch('https://erikhardin.github.io/PrinterReview/schedule.xlsx?t=' + Date.now());
+    var res = await fetch('https://raw.githubusercontent.com/erikhardin/PrinterReview/main/schedule.xlsx?t=' + Date.now());
     if (!res.ok) throw new Error('not found');
     var buf = await res.arrayBuffer();
     var wb = XLSX.read(buf, {type:'array'});

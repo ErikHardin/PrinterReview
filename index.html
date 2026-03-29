@@ -1583,18 +1583,36 @@ async function loadAndRenderSchedule() {
     rows.slice(1).forEach(function(row) {
       var bld = iBuilding !== -1 ? String(row[iBuilding]||'').trim() : '';
       if (!bld) return;
-      var timeVal = iTime !== -1 ? String(row[iTime]||'').trim() : '';
-      // Handle Excel serial time
-      if (!isNaN(parseFloat(timeVal)) && timeVal !== '') {
-        timeVal = excelTimeToStr(parseFloat(timeVal));
+      var timeRaw = iTime !== -1 ? row[iTime] : '';
+      var timeVal = '';
+      if (timeRaw !== '' && timeRaw !== null && timeRaw !== undefined) {
+        var timeNum = parseFloat(timeRaw);
+        // Only convert if it's a pure number (Excel serial time)
+        if (!isNaN(timeNum) && String(timeRaw).trim() === String(timeNum)) {
+          timeVal = excelTimeToStr(timeNum);
+        } else {
+          timeVal = String(timeRaw).trim();
+        }
       }
       var partners = iPartners !== -1 ? String(row[iPartners]||'').trim() : '';
       var dateRaw = iDate !== -1 ? row[iDate] : '';
       var dateStr = '';
-      if (dateRaw) {
-        var d = parseLeaseDate(String(dateRaw));
-        if (d) dateStr = d.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-        else dateStr = String(dateRaw);
+      if (dateRaw !== '' && dateRaw !== null && dateRaw !== undefined) {
+        var dateNum = parseFloat(dateRaw);
+        // Only convert if it's a pure Excel serial number
+        if (!isNaN(dateNum) && String(dateRaw).trim() === String(dateNum)) {
+          var d = parseLeaseDate(String(dateRaw));
+          if (d) dateStr = d.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+          else dateStr = String(dateRaw);
+        } else {
+          // Already a readable date string
+          var d2 = new Date(String(dateRaw));
+          if (!isNaN(d2.getTime())) {
+            dateStr = d2.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+          } else {
+            dateStr = String(dateRaw);
+          }
+        }
       }
       scheduleData.push({
         building: bld,
@@ -1680,10 +1698,12 @@ function renderSchedule() {
 
   var todayStr = new Date().toISOString().slice(0,10);
   var filtered = scheduleData.filter(function(s) {
+    var tl = s.team.toLowerCase().trim();
     var teamOk = scheduleFilter === 'all' ||
-                 s.team.toLowerCase().replace(/\s/g,'') === 'team' + scheduleFilter ||
-                 s.team.toLowerCase() === scheduleFilter ||
-                 s.team.toLowerCase().includes(scheduleFilter);
+                 tl === scheduleFilter ||
+                 tl === 'team ' + scheduleFilter ||
+                 tl === 'team' + scheduleFilter ||
+                 tl.startsWith(scheduleFilter);
     // Parse date from item for comparison
     var itemDate = '';
     if (s.date) {
@@ -1713,7 +1733,7 @@ function renderSchedule() {
       d = pd ? pd.toISOString().slice(0,10) : String(s.date);
     }
     if (!dateGroups[d]) dateGroups[d] = {};
-    var tk = s.team.toLowerCase().includes('a') ? 'a' : 'b';
+    var tl2 = s.team.toLowerCase().trim(); var tk = (tl2 === 'a' || tl2 === 'team a' || tl2 === 'teama') ? 'a' : 'b';
     if (!dateGroups[d][tk]) dateGroups[d][tk] = [];
     dateGroups[d][tk].push(s);
   });

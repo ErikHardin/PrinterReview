@@ -1915,8 +1915,18 @@ function renderSchedule() {
 function schedGoTo(btn) {
   var bld = btn.getAttribute('data-bld');
   var fl  = btn.getAttribute('data-fl');
+  // Close schedule manually without toggling
   scheduleOpen = false;
-  toggleSchedule();
+  document.getElementById('scheduleScreen').style.display  = 'none';
+  document.getElementById('printerList').style.display     = 'flex';
+  document.getElementById('filterSection').style.display   = 'flex';
+  document.getElementById('searchWrap').style.display      = 'block';
+  document.getElementById('progressWrap').style.display    = 'block';
+  document.getElementById('syncBar').style.display         = 'flex';
+  document.getElementById('presenceBar').style.display     = '';
+  var btnSched = document.getElementById('btnSchedule');
+  if (btnSched) { btnSched.style.background=''; btnSched.style.borderColor=''; btnSched.style.color=''; }
+  // Navigate to building and floor
   curBld = bld; curFlr = String(fl); statusFilter = 'all';
   document.getElementById('bldSelect').value = bld;
   setStatusFilter('all');

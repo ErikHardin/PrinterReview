@@ -1455,8 +1455,17 @@ function buildSummary() {
   if (chipA)   chipA.className   = 'sched-chip' + (scheduleFilter==='a'   ? ' ta'  : '');
   if (chipB)   chipB.className   = 'sched-chip' + (scheduleFilter==='b'   ? ' tb'  : '');
   var contentEl = document.getElementById('scheduleContent');
-  if (contentEl) contentEl.innerHTML = html;
-  else el.innerHTML = html;
+  var finalHtml = html;
+  if (filtered.length === 0) {
+    finalHtml = '<div class="empty-state"><div class="empty-icon">📅</div>' +
+      '<div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">' +
+      (schedDateFilter === 'today' ? 'No floors scheduled for today.' : 'No schedule entries found.') +
+      '</div>' +
+      (schedDateFilter === 'today' ? '<div style="font-size:13px;color:var(--text2)">Tap All Dates to see the full schedule.</div>' : '') +
+      '</div>';
+  }
+  if (contentEl) contentEl.innerHTML = finalHtml;
+  else el.innerHTML = finalHtml;
   } catch(e) {
     el.innerHTML = '<div style="padding:20px;color:#FF5B5B;font-size:13px;word-break:break-all">Error: ' + e.message + '<br><br>Stack: ' + e.stack + '</div>';
   }
@@ -1785,7 +1794,7 @@ function renderSchedule() {
     var mdD = new Date(mainDate.getUTCFullYear(), mainDate.getUTCMonth(), mainDate.getUTCDate());
     mainDateDisplay = mdDays[mdD.getDay()] + ', ' + mdMonths[mdD.getMonth()] + ' ' + mdD.getDate() + ', ' + mdD.getFullYear();
   }
-  html += '<div class="sched-date-hdr">📅 ' + mainDateDisplay + '</div>';
+  if (filtered.length > 0) html += '<div class="sched-date-hdr">📅 ' + mainDateDisplay + '</div>';
 
   // Stats row
   html += '<div class="sched-stats">';
@@ -1885,8 +1894,17 @@ function renderSchedule() {
   if (chipA)   chipA.className   = 'sched-chip' + (scheduleFilter==='a'   ? ' ta'  : '');
   if (chipB)   chipB.className   = 'sched-chip' + (scheduleFilter==='b'   ? ' tb'  : '');
   var contentEl = document.getElementById('scheduleContent');
-  if (contentEl) contentEl.innerHTML = html;
-  else el.innerHTML = html;
+  var finalHtml = html;
+  if (filtered.length === 0) {
+    finalHtml = '<div class="empty-state"><div class="empty-icon">📅</div>' +
+      '<div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">' +
+      (schedDateFilter === 'today' ? 'No floors scheduled for today.' : 'No schedule entries found.') +
+      '</div>' +
+      (schedDateFilter === 'today' ? '<div style="font-size:13px;color:var(--text2)">Tap All Dates to see the full schedule.</div>' : '') +
+      '</div>';
+  }
+  if (contentEl) contentEl.innerHTML = finalHtml;
+  else el.innerHTML = finalHtml;
 }
 
 function schedGoTo(btn) {

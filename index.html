@@ -26,7 +26,8 @@
   --retire:#FF5B5B;--retire-bg:#2A1111;--retire-border:#5C2020;
   --warn:#F5A623;
   --notfound:#9B9890;--notfound-bg:#1E2333;--notfound-border:#333B55;
-  --conflict:#C97BFF;--conflict-bg:#1A0D2E;--conflict-border:#5C1A8A;
+  --conflict:#C97BFF;
+  --notfound:#F5A623;--notfound-bg:#2E1F00;--notfound-border:#7A5200;--conflict-bg:#1A0D2E;--conflict-border:#5C1A8A;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
@@ -389,7 +390,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .sum-pill-p{background:var(--surface3);color:var(--text3)}
 .sum-pill-k{background:var(--keep-bg);color:var(--keep)}
 .sum-pill-r{background:var(--retire-bg);color:var(--retire)}
-.sum-pill-n{background:var(--surface3);color:var(--text3)}
+.sum-pill-n{background:var(--notfound-bg);color:var(--notfound)}
 .sum-pill-c{background:var(--conflict-bg);color:var(--conflict)}
 .sum-legend{display:flex;gap:12px;padding:0 2px 12px;flex-wrap:wrap}
 .sum-leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
@@ -629,7 +630,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
       </div>
       <div class="notes-wrap" id="notesWrap">
         <div class="notes-label">📝 Notes</div>
-        <textarea class="notes-input" id="notesInput" rows="2" maxlength="200" placeholder="e.g. Move to Room 412, check with department..."></textarea>
+        <textarea class="notes-input" id="notesInput" rows="2" maxlength="200" placeholder="e.g. Move to Room 412, printer missing, check with dept..."></textarea>
       </div>
       <div class="conflict-panel" id="othersPanel" style="display:none;background:var(--accent-dim);border-color:var(--accent)">
         <div class="conflict-title" style="color:var(--accent)">👥 Others have reviewed this printer</div>
@@ -1146,7 +1147,7 @@ function openModal(id){
   // Restore notes if my decision had notes
   var myDecNotes = myDec && myDec.notes ? myDec.notes : '';
   var ni2=document.getElementById('notesInput');if(ni2)ni2.value=myDecNotes;
-  var nw2=document.getElementById('notesWrap');if(nw2)nw2.style.display=(myDec&&myDec.status==='keep')?'block':'none';
+  var nw2=document.getElementById('notesWrap');if(nw2)nw2.style.display=myDec?'block':'none';
   const leEl=document.getElementById('mLeaseEnd');leEl.textContent=fmtLeaseDate(p.leaseEnd)||'—';leEl.style.color=leaseColor(p.leaseEnd);
 
   // Conflict panel
@@ -1200,7 +1201,7 @@ function openModal(id){
 
 }
 function closeModal(){document.getElementById('overlay').classList.remove('open');document.body.style.overflow='';activeId=null;pendingDec=null;selReplId=null;_scrollListenerAdded=false;const ms=document.querySelector('.modal-scroll');if(ms)ms.scrollTop=0;}
-function selDec(v){pendingDec=v;if(v==='keep'||v==='notfound'){selReplId=null;securePrint=false;}document.getElementById('securePrintWrap').classList.toggle('show',v==='retire');document.getElementById('secureCheck').classList.toggle('checked',securePrint);document.getElementById('secureCheckBox').textContent=securePrint?'\u2713':'';document.getElementById('replSec').classList.toggle('show',v==='retire'&&!securePrint);if(v==='retire'&&!securePrint)renderPicker('');refreshSelRepl();refreshDecBtns();var nw=document.getElementById('notesWrap');if(nw)nw.style.display=v==='keep'?'block':'none';}
+function selDec(v){pendingDec=v;if(v==='keep'||v==='notfound'){selReplId=null;securePrint=false;}document.getElementById('securePrintWrap').classList.toggle('show',v==='retire');document.getElementById('secureCheck').classList.toggle('checked',securePrint);document.getElementById('secureCheckBox').textContent=securePrint?'\u2713':'';document.getElementById('replSec').classList.toggle('show',v==='retire'&&!securePrint);if(v==='retire'&&!securePrint)renderPicker('');refreshSelRepl();refreshDecBtns();var nw=document.getElementById('notesWrap');if(nw)nw.style.display='block';}
 function refreshDecBtns(){document.getElementById('btnKeep').className='dec-btn'+(pendingDec==='keep'?' sk':'');document.getElementById('btnRetire').className='dec-btn'+(pendingDec==='retire'?' sr':'');document.getElementById('btnNotFound').className='dec-btn'+(pendingDec==='notfound'?' snf':'');const ok=pendingDec==='keep'||pendingDec==='notfound'||(pendingDec==='retire'&&(securePrint||selReplId));document.getElementById('btnSave').disabled=!ok;}
 
 // ══════════════════════════════════════════════════════════
@@ -1333,7 +1334,7 @@ function setStatusFilter(val){
       else if (s === 'pending')  btn.style.cssText = 'flex-shrink:0;background:var(--surface3);border-color:var(--text3);color:var(--text)';
       else if (s === 'keep')     btn.style.cssText = 'flex-shrink:0;background:var(--keep-bg);border-color:var(--keep-border);color:var(--keep)';
       else if (s === 'retire')   btn.style.cssText = 'flex-shrink:0;background:var(--retire-bg);border-color:var(--retire-border);color:var(--retire)';
-      else if (s === 'notfound') btn.style.cssText = 'flex-shrink:0;background:var(--surface3);border-color:var(--border2);color:var(--text2)';
+      else if (s === 'notfound') btn.style.cssText = 'flex-shrink:0;background:var(--notfound-bg);border-color:var(--notfound-border);color:var(--notfound)';
       else if (s === 'conflict') btn.style.cssText = 'flex-shrink:0;background:var(--conflict-bg);border-color:var(--conflict-border);color:var(--conflict)';
     }
   });

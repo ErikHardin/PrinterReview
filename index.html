@@ -2028,6 +2028,7 @@ function sendBroadcast() {
   db.ref('broadcast').set({
     from: myName,
     message: msg,
+    confetti: true,
     ts: Date.now()
   }).then(function() {
     document.getElementById('broadcastText').value = '';
@@ -2043,7 +2044,7 @@ function initBroadcast() {
     if (!data) return;
     // Only show if newer than when we started listening AND not from ourselves
     if (data.ts > lastSeen) {
-      showBroadcastToast(data.from, data.message);
+      showBroadcastToast(data.from, data.message, data.confetti);
     }
   });
 }
@@ -2233,7 +2234,7 @@ function checkBuildingComplete() {
   }
 }
 
-function launchConfetti() {
+function launchConfetti(seconds) {
   var canvas = document.getElementById('confettiCanvas');
   if (!canvas) return;
   var ctx = canvas.getContext('2d');
@@ -2258,7 +2259,7 @@ function launchConfetti() {
   }
 
   var frame = 0;
-  var maxFrames = 180;
+  var maxFrames = Math.round((seconds || 3) * 60);
 
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -2306,7 +2307,7 @@ function initCelebrations() {
         lastCelebratedFloor = data.floorKey || '';
       } else if (data.type === 'building') {
         showRocketToast(data.message);
-        launchConfetti();
+        launchConfetti(3);
         confettiShownBuildings[data.building || ''] = true;
       }
     }

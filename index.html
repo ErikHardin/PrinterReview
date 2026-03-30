@@ -47,8 +47,8 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .floor-celebration{display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.85);align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:32px}
 .floor-celebration.show{display:flex;animation:fadeIn .3s ease}
 .celeb-emoji{font-size:72px;margin-bottom:16px;animation:bounce 1s ease infinite alternate}
-.celeb-title{font-size:26px;font-weight:700;color:var(--keep);margin-bottom:8px}
-.celeb-sub{font-size:15px;color:var(--text2);margin-bottom:28px}
+.celeb-title{font-size:22px;font-weight:700;color:var(--keep);margin-bottom:8px;text-align:center;word-break:break-word;padding:0 12px}
+.celeb-sub{font-size:14px;color:var(--text2);margin-bottom:28px;text-align:center;word-break:break-word;padding:0 12px}
 .celeb-btn{padding:14px 32px;border-radius:12px;border:none;background:var(--keep);color:#fff;font-family:'Sora',sans-serif;font-size:16px;font-weight:700;cursor:pointer}
 @keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-20px)}}
 .pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:100%;max-width:260px}
@@ -287,7 +287,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .btn-save:disabled{opacity:.25}
 .btn-save:not(:disabled):active{opacity:.8}
 .empty-state{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px}
-.rocket-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(100px);z-index:997;background:var(--surface);border:1px solid var(--accent);border-radius:16px;padding:14px 24px;text-align:center;font-size:22px;font-weight:700;color:var(--text);box-shadow:0 8px 32px rgba(0,0,0,.5);transition:transform .4s cubic-bezier(.22,.68,0,1.2),opacity .4s;opacity:0;pointer-events:none;white-space:nowrap}
+.rocket-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(100px);z-index:997;background:var(--surface);border:1px solid var(--accent);border-radius:16px;padding:14px 20px;text-align:center;font-size:18px;font-weight:700;color:var(--text);box-shadow:0 8px 32px rgba(0,0,0,.5);transition:transform .4s cubic-bezier(.22,.68,0,1.2),opacity .4s;opacity:0;pointer-events:none;white-space:normal;max-width:85vw;width:auto}
 .rocket-toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 .confetti-canvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:996}
 
@@ -936,6 +936,7 @@ function hideLoading() {
   populateBldDropdown();
   initPresence();
   initBroadcast();
+  initCelebrations();
   requestWakeLock();
   // Restore admin button if role was saved
   var savedRole = localStorage.getItem('pr_role') || 'reviewer';
@@ -2193,7 +2194,6 @@ function checkRocketLaunch(printerId) {
   if (curBld === 'All' || !curFlr || curFlr === 'All') return;
   var floorKey = curBld + '|' + curFlr;
   if (rocketShownFloors[floorKey]) return;
-  // Check if this is the first decision on this floor
   var floorPrinters = printers.filter(function(p) {
     return p.building === curBld && String(p.floor) === String(curFlr);
   });
@@ -2201,9 +2201,9 @@ function checkRocketLaunch(printerId) {
     return getDecisionsFor(p.id).length > 0;
   }).length;
   if (decided === 1) {
-    // First decision on this floor!
     rocketShownFloors[floorKey] = true;
-    showRocketToast('🚀 Floor ' + fmtFloor(curFlr) + ' is off to the races!');
+    var msg = '🚀 Floor ' + fmtFloor(curFlr) + ' of ' + curBld + ' is off to the races!';
+    broadcastCelebration({type:'rocket', message:msg});
   }
 }
 
@@ -2225,8 +2225,11 @@ function checkBuildingComplete() {
   var allDone = bldPrinters.every(function(p){ return getDecisionsFor(p.id).length > 0; });
   if (allDone) {
     confettiShownBuildings[curBld] = true;
-    showRocketToast('🏆 ' + curBld + ' is 100% complete! Amazing work!');
-    launchConfetti();
+    broadcastCelebration({
+      type: 'building',
+      building: curBld,
+      message: '🏆 ' + curBld + ' is 100% complete! Amazing work!'
+    });
   }
 }
 
@@ -2280,6 +2283,40 @@ function launchConfetti() {
     }
   }
   draw();
+}
+
+// ── SHARED CELEBRATIONS ────────────────────────────────────────────────────────
+var lastCelebrationSeen = Date.now();
+
+function initCelebrations() {
+  if (!db) return;
+  db.ref('celebrations').on('value', function(snap) {
+    var data = snap.val();
+    if (!data) return;
+    // Only show if newer than when we started listening
+    if (data.ts > lastCelebrationSeen) {
+      lastCelebrationSeen = data.ts;
+      if (data.type === 'rocket') {
+        showRocketToast(data.message);
+      } else if (data.type === 'floor') {
+        // Show floor celebration for everyone
+        document.getElementById('celebTitle').textContent = data.title;
+        document.getElementById('celebSub').textContent = data.sub;
+        document.getElementById('floorCelebration').classList.add('show');
+        lastCelebratedFloor = data.floorKey || '';
+      } else if (data.type === 'building') {
+        showRocketToast(data.message);
+        launchConfetti();
+        confettiShownBuildings[data.building || ''] = true;
+      }
+    }
+  });
+}
+
+function broadcastCelebration(payload) {
+  if (!db) return;
+  payload.ts = Date.now();
+  db.ref('celebrations').set(payload);
 }
 
 // ── PRESENCE ───────────────────────────────────────────────────────────────────
@@ -2409,15 +2446,17 @@ function checkFloorComplete() {
   var vis = filtered();
   if (!vis.length) return;
   var allDone = vis.every(function(p){
-    var decs = getDecisionsFor(p.id);
-    return decs.length > 0;
+    return getDecisionsFor(p.id).length > 0;
   });
   if (allDone) {
     lastCelebratedFloor = floorKey;
     var flLabel = curFlr === 'All' ? curBld : 'Floor ' + fmtFloor(curFlr) + ' of ' + curBld;
-    document.getElementById('celebTitle').textContent = '🎉 ' + flLabel + ' Complete!';
-    document.getElementById('celebSub').textContent = 'All ' + vis.length + ' printers on this floor have been reviewed. Great work!';
-    document.getElementById('floorCelebration').classList.add('show');
+    broadcastCelebration({
+      type: 'floor',
+      floorKey: floorKey,
+      title: '🎉 ' + flLabel + ' Complete!',
+      sub: 'All ' + vis.length + ' printers on this floor have been reviewed. Great work!'
+    });
   }
 }
 

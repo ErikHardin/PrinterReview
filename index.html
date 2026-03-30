@@ -2025,14 +2025,17 @@ function sendBroadcast() {
   var err = document.getElementById('broadcastErr');
   err.textContent = '';
   if (!msg) { err.textContent = 'Please enter a message.'; return; }
+  var bts = Date.now();
   db.ref('broadcast').set({
     from: myName,
     message: msg,
     confetti: true,
-    ts: Date.now()
+    ts: bts
   }).then(function() {
     document.getElementById('broadcastText').value = '';
     closeDlg('broadcastDlg');
+    // Show on sender's device immediately
+    showBroadcastToast('You', msg, true);
   }).catch(function(e) { err.textContent = 'Error: ' + e.message; });
 }
 
@@ -2043,7 +2046,7 @@ function initBroadcast() {
     var data = snap.val();
     if (!data) return;
     // Only show if newer than when we started listening AND not from ourselves
-    if (data.ts > lastSeen) {
+    if (data.ts > lastSeen && data.from !== myName) {
       showBroadcastToast(data.from, data.message, data.confetti);
     }
   });

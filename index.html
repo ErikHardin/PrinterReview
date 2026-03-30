@@ -630,7 +630,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
       </div>
       <div class="notes-wrap" id="notesWrap">
         <div class="notes-label">📝 Notes</div>
-        <textarea class="notes-input" id="notesInput" rows="2" maxlength="200" placeholder="e.g. Move to Room 412, printer missing, check with dept..."></textarea>
+        <textarea class="notes-input" id="notesInput" rows="2" maxlength="200" placeholder="e.g. Move to Room 412, printer missing, check with dept..." oninput="refreshDecBtns()"></textarea>
       </div>
       <div class="conflict-panel" id="othersPanel" style="display:none;background:var(--accent-dim);border-color:var(--accent)">
         <div class="conflict-title" style="color:var(--accent)">👥 Others have reviewed this printer</div>
@@ -1203,7 +1203,7 @@ function openModal(id){
 }
 function closeModal(){resetModalHeight();document.getElementById('overlay').classList.remove('open');document.body.style.overflow='';activeId=null;pendingDec=null;selReplId=null;_scrollListenerAdded=false;const ms=document.querySelector('.modal-scroll');if(ms)ms.scrollTop=0;}
 function selDec(v){pendingDec=v;if(v==='keep'||v==='notfound'){selReplId=null;securePrint=false;}document.getElementById('securePrintWrap').classList.toggle('show',v==='retire');document.getElementById('secureCheck').classList.toggle('checked',securePrint);document.getElementById('secureCheckBox').textContent=securePrint?'\u2713':'';document.getElementById('replSec').classList.toggle('show',v==='retire'&&!securePrint);if(v==='retire'&&!securePrint)renderPicker('');refreshSelRepl();refreshDecBtns();var nw=document.getElementById('notesWrap');if(nw)nw.style.display='block';}
-function refreshDecBtns(){document.getElementById('btnKeep').className='dec-btn'+(pendingDec==='keep'?' sk':'');document.getElementById('btnRetire').className='dec-btn'+(pendingDec==='retire'?' sr':'');document.getElementById('btnNotFound').className='dec-btn'+(pendingDec==='notfound'?' snf':'');const ok=pendingDec==='keep'||pendingDec==='notfound'||(pendingDec==='retire'&&(securePrint||selReplId));document.getElementById('btnSave').disabled=!ok;}
+function refreshDecBtns(){document.getElementById('btnKeep').className='dec-btn'+(pendingDec==='keep'?' sk':'');document.getElementById('btnRetire').className='dec-btn'+(pendingDec==='retire'?' sr':'');document.getElementById('btnNotFound').className='dec-btn'+(pendingDec==='notfound'?' snf':'');const notesVal2=document.getElementById('notesInput')?document.getElementById('notesInput').value.trim():'';const ok=pendingDec==='keep'||pendingDec==='notfound'||(pendingDec==='retire'&&(securePrint||selReplId||notesVal2.length>0));document.getElementById('btnSave').disabled=!ok;}
 
 // ══════════════════════════════════════════════════════════
 //  PICKER
@@ -1223,6 +1223,29 @@ function renderPicker(q){
   const hits=q2?cands.filter(x=>[x.dnumber,x.bnumber,x.model,x.room,x.dept].some(v=>String(v||'').toLowerCase().includes(q2))):cands.slice(0,50);
   if(!hits.length){list.innerHTML='<div class="pi-empty">No other printers on this floor.</div>';return;}
   list.innerHTML='';
+
+  // Show recent keeps at top if no search query
+  if (!q2 && recentKeeps.length > 0) {
+    var recentOnFloor = recentKeeps.map(function(id){ return cands.find(function(x){ return x.id===id; }); }).filter(Boolean);
+    if (recentOnFloor.length > 0) {
+      var hdr = document.createElement('div');
+      hdr.className = 'pi-recent-hdr';
+      hdr.textContent = '⭐ Recently Kept';
+      list.appendChild(hdr);
+      recentOnFloor.forEach(function(x){
+        var item=document.createElement('div');
+        item.className='pi pi-recent'+(x.id===selReplId?' sel':'');
+        item.innerHTML='<div class="pi-dot"></div><div><div class="pi-model">'+x.model+'</div><div class="pi-meta">'+x.dnumber+' · '+x.bnumber+' · Rm '+x.room+' · '+fmt(x.avgPages)+'/mo'+(x.leaseEnd&&x.leaseEnd!=='N/A'&&x.leaseEnd!==''?' · 📋 '+fmtLeaseDate(x.leaseEnd):'')+' · ⭐ Recent Keep</div></div>';
+        item.onclick=function(){ selReplId=selReplId===x.id?null:x.id;renderPicker(document.getElementById('srchIn').value);refreshSelRepl();refreshDecBtns(); };
+        list.appendChild(item);
+      });
+      var divider = document.createElement('div');
+      divider.className = 'pi-recent-hdr';
+      divider.textContent = 'All Available Printers';
+      list.appendChild(divider);
+    }
+  }
+
   hits.forEach(x=>{const item=document.createElement('div');item.className='pi'+(x.id===selReplId?' sel':'');item.innerHTML=`<div class="pi-dot"></div><div><div class="pi-model">${x.model}</div><div class="pi-meta">${x.dnumber} · ${x.bnumber} · Rm ${x.room} · ${fmt(x.avgPages)}/mo${x.leaseEnd&&x.leaseEnd!=='N/A'&&x.leaseEnd!==''?' · 📋 '+fmtLeaseDate(x.leaseEnd):''}</div></div>`;item.onclick=()=>{selReplId=selReplId===x.id?null:x.id;renderPicker(document.getElementById('srchIn').value);refreshSelRepl();refreshDecBtns();};list.appendChild(item);});
 }
 function refreshSelRepl(){const box=document.getElementById('selRepl');if(selReplId&&pendingDec==='retire'){const rp=printers.find(p=>p.id===selReplId);document.getElementById('selReplM').textContent='✓ '+rp.model;document.getElementById('selReplS').textContent=rp.dnumber+' · '+rp.bnumber+' · Rm '+rp.room;box.classList.add('show');}else box.classList.remove('show');}
@@ -1251,6 +1274,15 @@ function saveDec(){
   const replP=selReplId?printers.find(x=>x.id===selReplId):null;
   const notesEl=document.getElementById('notesInput');const notesVal=notesEl?notesEl.value.trim():'';
   const dec={status:pendingDec,replacementId:pendingDec==='retire'&&!securePrint&&replP?(replP.dnumber):null,securePrint:pendingDec==='retire'?securePrint:false,notes:notesVal||null,reviewer:myName,ts:Date.now()};
+  // Track recent keeps
+  if (pendingDec === 'keep') {
+    recentKeeps = recentKeeps.filter(function(id){ return id !== activeId; });
+    recentKeeps.unshift(activeId);
+    if (recentKeeps.length > 3) recentKeeps = recentKeeps.slice(0, 3);
+  } else {
+    // Remove from recent keeps if changed away from keep
+    recentKeeps = recentKeeps.filter(function(id){ return id !== activeId; });
+  }
   // Write to Firebase: decisions/{dnumber}/{myKey}
   const p=printers.find(x=>x.id===activeId);
   const fireKey=p?dkey(p.dnumber):String(activeId);
@@ -2395,6 +2427,7 @@ function closeCelebration() {
 
 // ── OFFLINE SUPPORT ───────────────────────────────────────────────────────────
 var offlineQueue = [];
+var recentKeeps = []; // tracks last 3 printer IDs I personally marked Keep
 
 function flushOfflineQueue() {
   if (!offlineQueue.length) return;

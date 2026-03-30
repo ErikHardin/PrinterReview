@@ -216,7 +216,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 /* MODAL */
 .overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.65);z-index:200}
 .overlay.open{display:block}
-.modal{background:var(--surface);border-radius:0;border:1px solid var(--border2);border-bottom:none;position:fixed;top:0;bottom:0;left:0;right:0;width:100%;max-width:580px;margin:0 auto;z-index:201;animation:slideUp .2s cubic-bezier(.22,.68,0,1.2);display:flex;flex-direction:column}
+.modal{background:var(--surface);border-radius:0;border:1px solid var(--border2);border-bottom:none;position:fixed;top:0;left:0;right:0;width:100%;max-width:580px;margin:0 auto;z-index:201;animation:slideUp .2s cubic-bezier(.22,.68,0,1.2);display:flex;flex-direction:column}
 @keyframes slideUp{from{transform:translateY(50px);opacity:0}to{transform:translateY(0);opacity:1}}
 .mhandle{display:none}
 .modal-topbar{display:flex;flex-direction:column;gap:0;padding:10px 16px 10px;border-bottom:1px solid var(--border)}
@@ -1200,7 +1200,7 @@ function openModal(id){
   document.body.style.overflow='hidden';
 
 }
-function closeModal(){document.getElementById('overlay').classList.remove('open');document.body.style.overflow='';activeId=null;pendingDec=null;selReplId=null;_scrollListenerAdded=false;const ms=document.querySelector('.modal-scroll');if(ms)ms.scrollTop=0;}
+function closeModal(){resetModalHeight();document.getElementById('overlay').classList.remove('open');document.body.style.overflow='';activeId=null;pendingDec=null;selReplId=null;_scrollListenerAdded=false;const ms=document.querySelector('.modal-scroll');if(ms)ms.scrollTop=0;}
 function selDec(v){pendingDec=v;if(v==='keep'||v==='notfound'){selReplId=null;securePrint=false;}document.getElementById('securePrintWrap').classList.toggle('show',v==='retire');document.getElementById('secureCheck').classList.toggle('checked',securePrint);document.getElementById('secureCheckBox').textContent=securePrint?'\u2713':'';document.getElementById('replSec').classList.toggle('show',v==='retire'&&!securePrint);if(v==='retire'&&!securePrint)renderPicker('');refreshSelRepl();refreshDecBtns();var nw=document.getElementById('notesWrap');if(nw)nw.style.display='block';}
 function refreshDecBtns(){document.getElementById('btnKeep').className='dec-btn'+(pendingDec==='keep'?' sk':'');document.getElementById('btnRetire').className='dec-btn'+(pendingDec==='retire'?' sr':'');document.getElementById('btnNotFound').className='dec-btn'+(pendingDec==='notfound'?' snf':'');const ok=pendingDec==='keep'||pendingDec==='notfound'||(pendingDec==='retire'&&(securePrint||selReplId));document.getElementById('btnSave').disabled=!ok;}
 
@@ -2417,13 +2417,32 @@ let _scrollListenerAdded=false;
 function setModalHeight(){
   const modal=document.getElementById('theModal');
   if(!modal)return;
-  // Use visualViewport if available (handles Safari toolbar correctly)
-  const vh=window.visualViewport?window.visualViewport.height:window.innerHeight;
-  modal.style.maxHeight=Math.floor(vh*0.88)+'px';
+  if(window.visualViewport){
+    const vv = window.visualViewport;
+    modal.style.top = Math.round(vv.offsetTop) + 'px';
+    modal.style.height = Math.round(vv.height) + 'px';
+    modal.style.maxHeight = Math.round(vv.height) + 'px';
+  } else {
+    modal.style.top = '0px';
+    modal.style.height = window.innerHeight + 'px';
+    modal.style.maxHeight = window.innerHeight + 'px';
+  }
 }
-// Re-set height when visual viewport changes (Safari toolbar show/hide)
+function resetModalHeight(){
+  const modal=document.getElementById('theModal');
+  if(!modal)return;
+  modal.style.top='0px';
+  modal.style.height='100%';
+  modal.style.maxHeight='100%';
+}
+// Re-set height when visual viewport changes (keyboard opens/closes)
 if(window.visualViewport){
-  window.visualViewport.addEventListener('resize',()=>{if(document.getElementById('overlay').classList.contains('open'))setModalHeight();});
+  window.visualViewport.addEventListener('resize',function(){
+    if(document.getElementById('overlay').classList.contains('open')) setModalHeight();
+  });
+  window.visualViewport.addEventListener('scroll',function(){
+    if(document.getElementById('overlay').classList.contains('open')) setModalHeight();
+  });
 }
 document.getElementById('overlay').addEventListener('click',e=>{if(e.target===document.getElementById('overlay'))closeModal();});
 document.getElementById('adminOverlay').addEventListener('click',function(e){if(e.target===document.getElementById('adminOverlay'))closeAdmin();});

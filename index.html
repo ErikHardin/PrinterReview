@@ -2049,14 +2049,14 @@ function initBroadcast() {
   });
 }
 
-function showBroadcastToast(from, msg) {
+function showBroadcastToast(from, msg, withConfetti) {
   document.getElementById('broadcastFrom').textContent = '📢 From ' + from;
   document.getElementById('broadcastMsg').textContent = msg;
   var toast = document.getElementById('broadcastToast');
   toast.classList.add('show');
-  // Auto-dismiss after 8 seconds
   if (broadcastToastTimer) clearTimeout(broadcastToastTimer);
   broadcastToastTimer = setTimeout(dismissBroadcast, 5000);
+  if (withConfetti) launchConfetti(10);
 }
 
 function dismissBroadcast() {

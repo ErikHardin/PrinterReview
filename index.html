@@ -1164,6 +1164,7 @@ function openModal(id){
       const decLabel=d.status==='keep'?'✓ Keep':d.status==='retire'?'✗ Retire':'? Not Found';
       const decCls=d.status==='keep'?'k':d.status==='retire'?'r':'nf';
       const replLabel=d.securePrint?'🔒 Secure Print':rp2?rp2.dnumber:'';
+      const notesTxt=d.notes?'📝 '+d.notes:'';
       return '<div class="conflict-row"><span class="conflict-reviewer">'+d.reviewer+'</span><span class="conflict-dec '+decCls+'">'+decLabel+'</span>'+(replLabel?'<span class="conflict-repl">'+replLabel+'</span>':'')+(notesTxt?'<span class="conflict-repl" style="color:var(--text2)">'+notesTxt+'</span>':'')+'</div>';
     }).join('');
   } else { op.style.display='none'; }

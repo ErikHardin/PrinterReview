@@ -1095,8 +1095,17 @@ function renderFlrBar(){
   wrap.style.display='block';
   ['All',...fl].forEach(f=>{
     const btn=document.createElement('button');
-    btn.className='chip'+(String(f)===String(curFlr)?' af':'');
-    btn.textContent=f==='All'?'All Floors':'Floor '+fmtFloor(f);
+    var isSelected = String(f) === String(curFlr);
+    btn.className = 'chip' + (isSelected ? ' af' : '');
+    btn.textContent = f==='All' ? 'All Floors' : 'Floor ' + fmtFloor(f);
+    // Green if 100% complete and not currently selected
+    if (f !== 'All' && !isSelected && curBld !== 'All') {
+      var comp = getFloorCompletion(curBld, f);
+      if (comp === 2) {
+        btn.style.cssText = 'flex-shrink:0;background:var(--keep-bg);border-color:var(--keep-border);color:var(--keep);font-weight:700';
+        btn.textContent = '✓ Floor ' + fmtFloor(f);
+      }
+    }
     btn.onclick=()=>{curFlr=String(f);renderAll();updateMyPresence();};
     bar.appendChild(btn);
   });

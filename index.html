@@ -540,7 +540,6 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
       <button class="hbtn" id="btnAddPrinter" onclick="openAddPrinter()">➕</button>
       <button class="hbtn" id="btnSchedule" onclick="toggleSchedule()">&#x1F4C5;</button>
       <button class="hbtn" id="btnSummary" onclick="toggleSummary()">&#x1F4CA;</button>
-      <button class="hbtn purple"  id="conflictBtn" onclick="toggleConflictFilter()" style="display:none!important">⚠ Conflicts</button>
       <button class="hbtn"         onclick="openDlg('changePinDlg')">🔑</button>
       <button class="hbtn" id="btnReset" onclick="openDlg('resetDlg')" style="display:none">↩</button>
     </div>
@@ -1114,14 +1113,9 @@ function renderFlrBar(){
 // ══════════════════════════════════════════════════════════
 //  CONFLICT FILTER
 // ══════════════════════════════════════════════════════════
-function updateConflictButton(){
-  // Conflict button removed - conflicts visible via status filter chips
-  document.getElementById('conflictBtn').style.display='none';
-}
+function updateConflictButton(){ /* removed */ }
 function toggleConflictFilter(){
   showConflictsOnly=!showConflictsOnly;
-  const btn=document.getElementById('conflictBtn');
-  btn.style.background=showConflictsOnly?'var(--conflict-bg)':'';
   renderAll();
 }
 

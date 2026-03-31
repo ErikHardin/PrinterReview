@@ -287,6 +287,20 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .btn-save:disabled{opacity:.25}
 .btn-save:not(:disabled):active{opacity:.8}
 .empty-state{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px}
+.add-printer-sheet{background:var(--surface);border-radius:20px 20px 0 0;border:1px solid var(--border2);border-bottom:none;width:100%;max-width:580px;max-height:90vh;display:flex;flex-direction:column;animation:slideUp .2s cubic-bezier(.22,.68,0,1.2)}
+.add-printer-hdr{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center}
+.add-printer-title{font-size:16px;font-weight:700;flex:1}
+.add-printer-body{overflow-y:auto;padding:14px 18px 32px;flex:1}
+.add-printer-field{margin-bottom:12px}
+.add-printer-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+.add-printer-input{width:100%;padding:10px 12px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface2);font-family:'Sora',sans-serif;font-size:14px;color:var(--text);outline:none;-webkit-appearance:none}
+.add-printer-input:focus{border-color:var(--accent)}
+.add-printer-input::placeholder{color:var(--text3)}
+.add-printer-row{display:flex;gap:8px}
+.add-printer-row .add-printer-field{flex:1}
+.add-printer-save{width:100%;padding:13px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-family:'Sora',sans-serif;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px}
+.add-printer-err{font-size:12px;color:var(--retire);margin-bottom:8px;min-height:16px}
+
 .rocket-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(100px);z-index:997;background:var(--surface);border:1px solid var(--accent);border-radius:16px;padding:14px 20px;text-align:center;font-size:18px;font-weight:700;color:var(--text);box-shadow:0 8px 32px rgba(0,0,0,.5);transition:transform .4s cubic-bezier(.22,.68,0,1.2),opacity .4s;opacity:0;pointer-events:none;white-space:normal;max-width:85vw;width:auto}
 .rocket-toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 .confetti-canvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:996}
@@ -523,6 +537,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
       <button class="hbtn green"   onclick="exportCSV()">CSV</button>
       <button class="hbtn admin-btn" id="btnAdmin" onclick="openAdmin()" style="display:none">&#x1F464;</button>
       <button class="hbtn admin-btn" id="btnBroadcast" onclick="openDlg('broadcastDlg')" style="display:none">&#x1F4E2;</button>
+      <button class="hbtn" id="btnAddPrinter" onclick="openAddPrinter()">➕</button>
       <button class="hbtn" id="btnSchedule" onclick="toggleSchedule()">&#x1F4C5;</button>
       <button class="hbtn" id="btnSummary" onclick="toggleSummary()">&#x1F4CA;</button>
       <button class="hbtn purple"  id="conflictBtn" onclick="toggleConflictFilter()" style="display:none">⚠ Conflicts</button>
@@ -683,6 +698,52 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
   <div class="broadcast-from" id="broadcastFrom">From Erik</div>
   <div class="broadcast-msg" id="broadcastMsg"></div>
   <button class="broadcast-dismiss" onclick="dismissBroadcast()">Tap to dismiss</button>
+</div>
+
+<!-- Add Printer overlay -->
+<div class="admin-overlay" id="addPrinterOverlay">
+  <div class="add-printer-sheet">
+    <div class="add-printer-hdr">
+      <div class="add-printer-title">➕ Add Printer</div>
+      <button class="admin-close" onclick="closeAddPrinter()">Cancel</button>
+    </div>
+    <div class="add-printer-body">
+      <div class="add-printer-field">
+        <div class="add-printer-label">Model <span style="color:var(--retire)">*</span></div>
+        <input class="add-printer-input" id="apModel" type="text" placeholder="e.g. Canon imageRUNNER" autocomplete="off">
+      </div>
+      <div class="add-printer-row">
+        <div class="add-printer-field">
+          <div class="add-printer-label">D Number</div>
+          <input class="add-printer-input" id="apDnum" type="text" placeholder="D#" autocomplete="off">
+        </div>
+        <div class="add-printer-field">
+          <div class="add-printer-label">Serial Number</div>
+          <input class="add-printer-input" id="apSerial" type="text" placeholder="S/N" autocomplete="off">
+        </div>
+      </div>
+      <div class="add-printer-row">
+        <div class="add-printer-field">
+          <div class="add-printer-label">Building <span style="color:var(--retire)">*</span></div>
+          <input class="add-printer-input" id="apBuilding" type="text" placeholder="Building" autocomplete="off">
+        </div>
+        <div class="add-printer-field">
+          <div class="add-printer-label">Floor <span style="color:var(--retire)">*</span></div>
+          <input class="add-printer-input" id="apFloor" type="text" placeholder="Floor" autocomplete="off">
+        </div>
+      </div>
+      <div class="add-printer-field">
+        <div class="add-printer-label">Room</div>
+        <input class="add-printer-input" id="apRoom" type="text" placeholder="Room number" autocomplete="off">
+      </div>
+      <div class="add-printer-field">
+        <div class="add-printer-label">Notes</div>
+        <textarea class="add-printer-input" id="apNotes" rows="2" placeholder="Any additional details..."></textarea>
+      </div>
+      <div class="add-printer-err" id="apErr"></div>
+      <button class="add-printer-save" onclick="saveManualPrinter()">Add Printer</button>
+    </div>
+  </div>
 </div>
 
 <!-- Admin sheet -->
@@ -937,6 +998,7 @@ function hideLoading() {
   initPresence();
   initBroadcast();
   initCelebrations();
+  initManualPrinters();
   requestWakeLock();
   // Restore admin button if role was saved
   var savedRole = localStorage.getItem('pr_role') || 'reviewer';
@@ -1019,6 +1081,13 @@ function populateBldDropdown(){
   });
 }
 function onBldChange(val){curBld=val;curFlr='All';showConflictsOnly=false;renderAll();updateMyPresence();}
+function getFloorCompletion(bld, fl) {
+  var fp = printers.filter(function(p){ return p.building===bld && String(p.floor)===String(fl); });
+  if (!fp.length) return 0;
+  var done = fp.filter(function(p){ return getDecisionsFor(p.id).length > 0; }).length;
+  return done === fp.length ? 2 : done > 0 ? 1 : 0; // 2=complete, 1=partial, 0=none
+}
+
 function renderFlrBar(){
   const bar=document.getElementById('flrBar'),wrap=document.getElementById('flrWrap'),fl=fls(curBld);
   bar.innerHTML='';
@@ -1339,7 +1408,7 @@ function doReset(){
 //  EXPORT CSV (only decided printers, shows all reviewers)
 // ══════════════════════════════════════════════════════════
 function exportCSV(){
-  const rows=[['Reviewer','Institute','Department','Building','Floor','Room','Model','DNumber','BNumber','SerialNumber','LeaseEnd','AvgPagesPrinted','EpicTrays','Decision','DecisionDate','Notes','SecurePrint','ReplacementModel','ReplacementDNumber','ReplacementBNumber','Conflict']];
+  const rows=[['Reviewer','Institute','Department','Building','Floor','Room','Model','DNumber','BNumber','SerialNumber','LeaseEnd','AvgPagesPrinted','EpicTrays','Decision','DecisionDate','Notes','SecurePrint','ReplacementModel','ReplacementDNumber','ReplacementBNumber','Conflict','Manual']];
   printers.forEach(p=>{
     const decs=getDecisionsFor(p.id);
     if(!decs.length)return; // skip pending
@@ -1348,7 +1417,7 @@ function exportCSV(){
     const isConflict=hasConflict(p.id);
     const rp=d.replacementId?printers.find(x=>x.dnumber===d.replacementId):null;
     const decDate=d.ts?new Date(d.ts).toLocaleDateString('en-US',{year:'numeric',month:'2-digit',day:'2-digit'}):'';
-    rows.push([d.reviewer,p.institute,p.dept,p.building,p.floor,p.room,p.model,p.dnumber,p.bnumber,p.serial||'',p.leaseEnd||'',p.avgPages,p.epic||0,d.status,decDate,d.notes||'',d.securePrint?'YES':'',rp?.model||'',rp?.dnumber||'',rp?.bnumber||'',isConflict?'YES':'']);
+    rows.push([d.reviewer,p.institute,p.dept,p.building,p.floor,p.room,p.model,p.dnumber,p.bnumber,p.serial||'',p.leaseEnd||'',p.avgPages,p.epic||0,d.status,decDate,d.notes||'',d.securePrint?'YES':'',rp?.model||'',rp?.dnumber||'',rp?.bnumber||'',isConflict?'YES':'',p.manual?'YES':'']);
   });
   const csv=rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
@@ -2289,6 +2358,87 @@ function launchConfetti(seconds) {
   draw();
 }
 
+// ── ADD MANUAL PRINTER ─────────────────────────────────────────────────────────
+var manualPrinters = [];
+var manualPrinterCounter = 0;
+
+function initManualPrinters() {
+  db.ref('manualPrinters').on('value', function(snap) {
+    var data = snap.val() || {};
+    manualPrinters = Object.keys(data).map(function(k) {
+      return Object.assign({_key: k, manual: true}, data[k]);
+    });
+    // Merge into printers array - remove old manual ones first
+    printers = printers.filter(function(p){ return !p.manual; });
+    manualPrinters.forEach(function(mp) {
+      if (!printers.find(function(p){ return p.id === mp.id; })) {
+        printers.push(mp);
+      }
+    });
+    renderAll();
+  });
+}
+
+function openAddPrinter() {
+  // Pre-fill building and floor
+  document.getElementById('apBuilding').value = curBld !== 'All' ? curBld : '';
+  document.getElementById('apFloor').value = curFlr !== 'All' ? curFlr : '';
+  document.getElementById('apModel').value = '';
+  document.getElementById('apDnum').value = '';
+  document.getElementById('apSerial').value = '';
+  document.getElementById('apRoom').value = '';
+  document.getElementById('apNotes').value = '';
+  document.getElementById('apErr').textContent = '';
+  document.getElementById('addPrinterOverlay').classList.add('open');
+}
+
+function closeAddPrinter() {
+  document.getElementById('addPrinterOverlay').classList.remove('open');
+}
+
+function saveManualPrinter() {
+  var model    = document.getElementById('apModel').value.trim();
+  var dnum     = document.getElementById('apDnum').value.trim();
+  var serial   = document.getElementById('apSerial').value.trim();
+  var building = document.getElementById('apBuilding').value.trim();
+  var floor    = document.getElementById('apFloor').value.trim();
+  var room     = document.getElementById('apRoom').value.trim();
+  var notes    = document.getElementById('apNotes').value.trim();
+  var err      = document.getElementById('apErr');
+  err.textContent = '';
+
+  if (!model)              { err.textContent = 'Model is required.'; return; }
+  if (!dnum && !serial)    { err.textContent = 'D# or Serial Number is required.'; return; }
+  if (!building)           { err.textContent = 'Building is required.'; return; }
+  if (!floor)              { err.textContent = 'Floor is required.'; return; }
+
+  // Generate a unique key
+  var key = 'manual_' + Date.now();
+  var displayDnum = dnum || ('MANUAL-' + serial.slice(-6));
+
+  var printer = {
+    id: key,
+    manual: true,
+    institute: '',
+    dept: '',
+    building: building,
+    floor: floor,
+    room: room,
+    model: model,
+    dnumber: displayDnum,
+    bnumber: '',
+    serial: serial,
+    avgPages: 0,
+    epic: 0,
+    leaseEnd: '',
+    notes: notes
+  };
+
+  db.ref('manualPrinters/' + key).set(printer).then(function() {
+    closeAddPrinter();
+  }).catch(function(e) { err.textContent = 'Error: ' + e.message; });
+}
+
 // ── SHARED CELEBRATIONS ────────────────────────────────────────────────────────
 var lastCelebrationSeen = Date.now();
 
@@ -2422,7 +2572,13 @@ function handleSwipeRight(printerId, row) {
     setTimeout(function(){ row.classList.remove('swipe-animate'); }, 400);
     var dec = {status:'keep', replacementId:null, securePrint:false, reviewer:myName, ts:Date.now()};
     db.ref('decisions/'+fireKey+'/'+myKey).set(dec)
-      .then(function(){ renderAll(); checkFloorComplete(); checkRocketLaunch(printerId); checkBuildingComplete(); })
+      .then(function(){
+        // Track recent keeps from swipe
+        recentKeeps = recentKeeps.filter(function(id){ return id !== printerId; });
+        recentKeeps.unshift(printerId);
+        if (recentKeeps.length > 3) recentKeeps = recentKeeps.slice(0, 3);
+        renderAll(); checkFloorComplete(); checkRocketLaunch(printerId); checkBuildingComplete();
+      })
       .catch(function(e){ alert('Save failed: '+e.message); });
 
   } else if (myDec) {
@@ -2444,22 +2600,25 @@ function handleSwipeRight(printerId, row) {
 var lastCelebratedFloor = '';
 
 function checkFloorComplete() {
-  if (curBld === 'All' || !printers.length) return;
+  if (curBld === 'All' || curFlr === 'All' || !printers.length) return;
   var floorKey = curBld + '|' + curFlr;
   if (floorKey === lastCelebratedFloor) return;
-  var vis = filtered();
-  if (!vis.length) return;
-  var allDone = vis.every(function(p){
+  // Use ALL printers on this floor, not just filtered view
+  var floorPrinters = printers.filter(function(p){
+    return p.building === curBld && String(p.floor) === String(curFlr);
+  });
+  if (!floorPrinters.length) return;
+  var allDone = floorPrinters.every(function(p){
     return getDecisionsFor(p.id).length > 0;
   });
   if (allDone) {
     lastCelebratedFloor = floorKey;
-    var flLabel = curFlr === 'All' ? curBld : 'Floor ' + fmtFloor(curFlr) + ' of ' + curBld;
+    var flLabel = 'Floor ' + fmtFloor(curFlr) + ' of ' + curBld;
     broadcastCelebration({
       type: 'floor',
       floorKey: floorKey,
       title: '🎉 ' + flLabel + ' Complete!',
-      sub: 'All ' + vis.length + ' printers on this floor have been reviewed. Great work!'
+      sub: 'All ' + floorPrinters.length + ' printers on this floor have been reviewed. Great work!'
     });
   }
 }
@@ -2523,6 +2682,7 @@ if(window.visualViewport){
 }
 document.getElementById('overlay').addEventListener('click',e=>{if(e.target===document.getElementById('overlay'))closeModal();});
 document.getElementById('adminOverlay').addEventListener('click',function(e){if(e.target===document.getElementById('adminOverlay'))closeAdmin();});
+document.getElementById('addPrinterOverlay').addEventListener('click',function(e){if(e.target===document.getElementById('addPrinterOverlay'))closeAddPrinter();});
 
 // ══════════════════════════════════════════════════════════
 //  INIT

@@ -287,6 +287,8 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .btn-save:disabled{opacity:.25}
 .btn-save:not(:disabled):active{opacity:.8}
 .empty-state{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px}
+.back-to-top{position:fixed;bottom:24px;right:16px;z-index:500;width:42px;height:42px;border-radius:50%;background:var(--accent);color:#fff;border:none;font-size:20px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .2s ease;display:flex;align-items:center;justify-content:center}
+.back-to-top.visible{opacity:1;pointer-events:auto}
 .add-printer-sheet{background:var(--surface);border-radius:20px 20px 0 0;border:1px solid var(--border2);border-bottom:none;width:100%;max-width:580px;max-height:90vh;display:flex;flex-direction:column;animation:slideUp .2s cubic-bezier(.22,.68,0,1.2)}
 .add-printer-hdr{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center}
 .add-printer-title{font-size:16px;font-weight:700;flex:1}
@@ -774,6 +776,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
   </div>
 </div>
 
+<button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 <canvas class="confetti-canvas" id="confettiCanvas"></canvas>
 <div class="rocket-toast" id="rocketToast"></div>
 <div class="floor-celebration" id="floorCelebration">
@@ -2065,6 +2068,17 @@ function schedGoTo(btn) {
   setStatusFilter('all');
   renderAll();
 }
+
+// ── BACK TO TOP ───────────────────────────────────────────────────────────────
+window.addEventListener('scroll', function() {
+  var btn = document.getElementById('backToTop');
+  if (!btn) return;
+  if (window.scrollY > 300) {
+    btn.classList.add('visible');
+  } else {
+    btn.classList.remove('visible');
+  }
+}, {passive: true});
 
 // ── WAKE LOCK ─────────────────────────────────────────────────────────────────
 var wakeLock = null;

@@ -1115,10 +1115,8 @@ function renderFlrBar(){
 //  CONFLICT FILTER
 // ══════════════════════════════════════════════════════════
 function updateConflictButton(){
-  const conflictCount=printers.filter(p=>hasConflict(p.id)).length;
-  const btn=document.getElementById('conflictBtn');
-  if(conflictCount>0){btn.style.display='';btn.textContent='⚠ '+conflictCount+' Conflict'+(conflictCount!==1?'s':'');}
-  else{btn.style.display='none';showConflictsOnly=false;}
+  // Conflict button removed - conflicts visible via status filter chips
+  document.getElementById('conflictBtn').style.display='none';
 }
 function toggleConflictFilter(){
   showConflictsOnly=!showConflictsOnly;

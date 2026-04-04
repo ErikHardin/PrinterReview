@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZPL Print Test</title>
+  <style>
+    body { font-family: sans-serif; background: #1a1a2e; color: #fff; padding: 24px; text-align: center; }
+    h2 { margin-bottom: 8px; }
+    p { color: #aaa; font-size: 14px; margin-bottom: 32px; }
+    .btn { display: block; width: 100%; max-width: 340px; margin: 12px auto; padding: 16px; border-radius: 12px; border: none; font-size: 16px; font-weight: 700; cursor: pointer; }
+    .btn-print { background: #4F7FFF; color: #fff; }
+    .btn-sm { background: #2a2a3e; color: #aaa; font-size: 13px; padding: 12px; }
+    .zpl-box { background: #0d0d1a; border: 1px solid #333; border-radius: 8px; padding: 12px; text-align: left; font-family: monospace; font-size: 11px; color: #7fff7f; max-width: 340px; margin: 16px auto; word-break: break-all; white-space: pre-wrap; }
+    .status { margin-top: 20px; font-size: 13px; color: #F5A623; min-height: 20px; }
+  </style>
+</head>
+<body>
+  <h2>🖨️ ZPL Print Test</h2>
+  <p>Tests MobiPrint Arrowhead URL scheme with a sample label</p>
+
+  <div class="zpl-box" id="zplPreview"></div>
+
+  <button class="btn btn-print" onclick="printLabel()">Print Test Label</button>
+  <button class="btn btn-sm" onclick="copyZPL()">Copy ZPL to Clipboard</button>
+
+  <div class="status" id="status"></div>
+
+  <script>
+    // Sample ZPL label - 4x2 inch label (adjust as needed)
+    var zpl = [
+      '^XA',
+      '^CF0,40',
+      '^FO30,20^FDRETIRE LABEL TEST^FS',
+      '^CF0,28',
+      '^FO30,70^FDD Number: D12345^FS',
+      '^FO30,105^FDB Number: B67890^FS',
+      '^FO30,140^FDModel: Canon imageRUNNER^FS',
+      '^FO30,175^FDRoom: 412B^FS',
+      '^FO30,210^FDBuilding: Main / Floor 04^FS',
+      '^FO30,245^FDReplace with: D99999^FS',
+      '^FO30,280^FDDate: ' + new Date().toLocaleDateString() + '^FS',
+      '^XZ'
+    ].join('\n');
+
+    document.getElementById('zplPreview').textContent = zpl;
+
+    function printLabel() {
+      var status = document.getElementById('status');
+      status.textContent = 'Opening MobiPrint...';
+      var encoded = encodeURIComponent(zpl);
+      var url = 'Arrowhead://ech-technicalsolutions.com/print?v1=' + encoded + '&xsource=safari&x-success=https://ech-technicalsolutions.com/PrinterReview';
+      window.location.href = url;
+      setTimeout(function() {
+        status.textContent = 'If MobiPrint opened — success! If not, try the copy button.';
+      }, 2000);
+    }
+
+    function copyZPL() {
+      navigator.clipboard.writeText(zpl).then(function() {
+        document.getElementById('status').textContent = 'ZPL copied to clipboard!';
+      }).catch(function() {
+        document.getElementById('status').textContent = 'Copy failed — use a browser that supports clipboard.';
+      });
+    }
+  </script>
+</body>
+</html>

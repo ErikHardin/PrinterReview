@@ -7,60 +7,68 @@
   <style>
     body { font-family: sans-serif; background: #1a1a2e; color: #fff; padding: 24px; text-align: center; }
     h2 { margin-bottom: 8px; }
-    p { color: #aaa; font-size: 14px; margin-bottom: 32px; }
+    p { color: #aaa; font-size: 14px; margin-bottom: 24px; }
     .btn { display: block; width: 100%; max-width: 340px; margin: 12px auto; padding: 16px; border-radius: 12px; border: none; font-size: 16px; font-weight: 700; cursor: pointer; }
-    .btn-print { background: #4F7FFF; color: #fff; }
+    .btn-blue { background: #4F7FFF; color: #fff; }
+    .btn-green { background: #34C97A; color: #fff; }
+    .btn-amber { background: #F5A623; color: #fff; }
     .btn-sm { background: #2a2a3e; color: #aaa; font-size: 13px; padding: 12px; }
-    .zpl-box { background: #0d0d1a; border: 1px solid #333; border-radius: 8px; padding: 12px; text-align: left; font-family: monospace; font-size: 11px; color: #7fff7f; max-width: 340px; margin: 16px auto; word-break: break-all; white-space: pre-wrap; }
-    .status { margin-top: 20px; font-size: 13px; color: #F5A623; min-height: 20px; }
+    .status { margin-top: 20px; font-size: 13px; color: #F5A623; min-height: 40px; line-height: 1.5; padding: 0 12px; }
+    .log { background: #0d0d1a; border: 1px solid #333; border-radius: 8px; padding: 12px; text-align: left; font-family: monospace; font-size: 10px; color: #7fff7f; max-width: 340px; margin: 16px auto; word-break: break-all; white-space: pre-wrap; }
   </style>
 </head>
 <body>
-  <h2>🖨️ ZPL Print Test</h2>
-  <p>Tests MobiPrint Arrowhead URL scheme with a sample label</p>
+  <h2>🖨️ ZPL Print Test v2</h2>
+  <p>Try each method and see which one prints</p>
 
-  <div class="zpl-box" id="zplPreview"></div>
+  <button class="btn btn-blue" onclick="tryMethod1()">Method 1 — Hosted .zpl file</button>
+  <button class="btn btn-green" onclick="tryMethod2()">Method 2 — Base64 ZPL</button>
+  <button class="btn btn-amber" onclick="tryMethod3()">Method 3 — HTML label</button>
+  <button class="btn btn-sm" onclick="copyZPL()">📋 Copy raw ZPL to clipboard</button>
 
-  <button class="btn btn-print" onclick="printLabel()">Print Test Label</button>
-  <button class="btn btn-sm" onclick="copyZPL()">Copy ZPL to Clipboard</button>
-
-  <div class="status" id="status"></div>
+  <div class="status" id="status">Tap a method to test</div>
+  <div class="log" id="log"></div>
 
   <script>
-    // Sample ZPL label - 4x2 inch label (adjust as needed)
-    var zpl = [
-      '^XA',
-      '^CF0,40',
-      '^FO30,20^FDRETIRE LABEL TEST^FS',
-      '^CF0,28',
-      '^FO30,70^FDD Number: D12345^FS',
-      '^FO30,105^FDB Number: B67890^FS',
-      '^FO30,140^FDModel: Canon imageRUNNER^FS',
-      '^FO30,175^FDRoom: 412B^FS',
-      '^FO30,210^FDBuilding: Main / Floor 04^FS',
-      '^FO30,245^FDReplace with: D99999^FS',
-      '^FO30,280^FDDate: ' + new Date().toLocaleDateString() + '^FS',
-      '^XZ'
-    ].join('\n');
+    var zpl = '^XA^CF0,40^FO30,20^FDRETIRE LABEL TEST^FS^CF0,28^FO30,70^FDD: D12345^FS^FO30,105^FDB: B67890^FS^FO30,140^FDModel: Canon iR^FS^FO30,175^FDRoom: 412B Fl 04^FS^FO30,210^FDDate: ' + new Date().toLocaleDateString() + '^FS^XZ';
+    var cb = encodeURIComponent('https://ech-technicalsolutions.com/PrinterReview/print_test.html');
 
-    document.getElementById('zplPreview').textContent = zpl;
+    function setStatus(msg) { document.getElementById('status').textContent = msg; }
+    function setLog(msg) { document.getElementById('log').textContent = msg; }
 
-    function printLabel() {
-      var status = document.getElementById('status');
-      status.textContent = 'Opening MobiPrint...';
-      var encoded = encodeURIComponent(zpl);
-      var url = 'Arrowhead://ech-technicalsolutions.com/print?v1=' + encoded + '&xsource=safari&x-success=https://ech-technicalsolutions.com/PrinterReview';
+    // Method 1: Hosted .zpl file - MobiPrint fetches from URL
+    function tryMethod1() {
+      var url = 'Arrowhead://ech-technicalsolutions.com/PrinterReview/test_label.zpl?x-success=' + cb;
+      setStatus('Opening MobiPrint with hosted .zpl file...');
+      setLog(url);
       window.location.href = url;
-      setTimeout(function() {
-        status.textContent = 'If MobiPrint opened — success! If not, try the copy button.';
-      }, 2000);
+    }
+
+    // Method 2: Inline base64 encoded ZPL
+    function tryMethod2() {
+      var b64 = btoa(unescape(encodeURIComponent(zpl)));
+      var url = 'Arrowhead://data:application/zpl;base64,' + b64 + '?x-success=' + cb;
+      setStatus('Opening MobiPrint with base64 ZPL...');
+      setLog('Arrowhead://data:application/zpl;base64,' + b64.substring(0,40) + '...');
+      window.location.href = url;
+    }
+
+    // Method 3: HTML label as base64
+    function tryMethod3() {
+      var html = '<html><body style="margin:0;padding:8px;font-family:Arial,sans-serif"><b style="font-size:18px">RETIRE</b><br>D: D12345<br>B: B67890<br>Model: Canon iR<br>Room: 412B Fl 04<br>Replace: D99999<br>' + new Date().toLocaleDateString() + '</body></html>';
+      var b64 = btoa(unescape(encodeURIComponent(html)));
+      var url = 'Arrowhead://data:text/html;base64,' + b64 + '?x-success=' + cb;
+      setStatus('Opening MobiPrint with HTML label...');
+      setLog('Arrowhead://data:text/html;base64,' + b64.substring(0,40) + '...');
+      window.location.href = url;
     }
 
     function copyZPL() {
       navigator.clipboard.writeText(zpl).then(function() {
-        document.getElementById('status').textContent = 'ZPL copied to clipboard!';
+        setStatus('✓ ZPL copied! Paste into MobiPrint manually.');
       }).catch(function() {
-        document.getElementById('status').textContent = 'Copy failed — use a browser that supports clipboard.';
+        setLog(zpl);
+        setStatus('Copy failed — ZPL shown above, select and copy manually.');
       });
     }
   </script>

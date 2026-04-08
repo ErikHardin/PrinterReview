@@ -1428,14 +1428,15 @@ function exportCSV(){
   a.download='printer-review-'+new Date().toISOString().slice(0,10)+'.csv';a.click();
 
   // ── Second CSV: asset_update.csv ──────────────────────────────────────────
-  const rows2=[['SerialNumber','CurrentDisposition','WalkthroughDate','Notes','ReplacementType','ReplacementBNumber']];
+  const rows2=[['SerialNumber','DNumber','BNumber','CurrentDisposition','WalkthroughDate','Notes','ReplacementType','ReplacementBNumber']];
   printers.forEach(p=>{
     const decs=getDecisionsFor(p.id);
     if(!decs.length)return; // skip pending
     const d=decs.reduce((a,b)=>(b.ts||0)>(a.ts||0)?b:a,decs[0]);
     // Disposition mapping
     var disposition = '';
-    if(d.status==='keep') disposition='No Action Needed';
+    var isHP = p.model && p.model.toUpperCase().indexOf('HP') !== -1;
+    if(d.status==='keep') disposition = isHP ? 'Exchange Device' : 'No Action Needed';
     else if(d.status==='retire'||d.status==='notfound') disposition='Approved for Removal';
     else return; // skip anything else
     // Date MM-DD-YYYY
@@ -1447,6 +1448,9 @@ function exportCSV(){
       var yyyy=dt.getFullYear();
       wDate=mm+'-'+dd+'-'+yyyy;
     }
+    // Notes - append NOT FOUND if notfound
+    var noteVal = d.notes||'';
+    if(d.status==='notfound') noteVal = noteVal ? noteVal+' | NOT FOUND' : 'NOT FOUND';
     // Replacement type - only for secure print on retire
     var replType='';
     if(d.status==='retire'&&d.securePrint) replType='Secure-Print - NO DEVICE NEEDED';
@@ -1456,7 +1460,7 @@ function exportCSV(){
       var rp2=printers.find(x=>x.dnumber===d.replacementId);
       if(rp2) replBnum=rp2.bnumber||'';
     }
-    rows2.push([p.serial||'',disposition,wDate,d.notes||'',replType,replBnum]);
+    rows2.push([p.serial||'',p.dnumber||'',p.bnumber||'',disposition,wDate,noteVal,replType,replBnum]);
   });
   const csv2=rows2.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
   setTimeout(function(){

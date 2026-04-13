@@ -1412,7 +1412,7 @@ function doReset(){
 //  EXPORT CSV (only decided printers, shows all reviewers)
 // ══════════════════════════════════════════════════════════
 function exportCSV(){
-  const rows=[['Reviewer','Institute','Department','Building','Floor','Room','Model','DNumber','BNumber','SerialNumber','LeaseEnd','AvgPagesPrinted','EpicTrays','Decision','DecisionDate','Notes','SecurePrint','ReplacementModel','ReplacementDNumber','ReplacementBNumber','Conflict','Manual']];
+  const rows=[['Reviewer','Institute','Department','Building','Floor','Room','Model','DNumber','BNumber','SerialNumber','LeaseEnd','AvgPagesPrinted','EpicTrays','Decision','DecisionDate','Notes','SecurePrint','ReplacementModel','ReplacementDNumber','ReplacementBNumber','ReplacementRoom','Conflict','Manual']];
   printers.forEach(p=>{
     const decs=getDecisionsFor(p.id);
     if(!decs.length)return; // skip pending
@@ -1421,7 +1421,7 @@ function exportCSV(){
     const isConflict=hasConflict(p.id);
     const rp=d.replacementId?printers.find(x=>x.dnumber===d.replacementId):null;
     const decDate=d.ts?new Date(d.ts).toLocaleDateString('en-US',{year:'numeric',month:'2-digit',day:'2-digit'}):'';
-    rows.push([d.reviewer,p.institute,p.dept,p.building,p.floor,p.room,p.model,p.dnumber,p.bnumber,p.serial||'',p.leaseEnd||'',p.avgPages,p.epic||0,d.status,decDate,d.notes||'',d.securePrint?'YES':'',rp?.model||'',rp?.dnumber||'',rp?.bnumber||'',isConflict?'YES':'',p.manual?'YES':'']);
+    rows.push([d.reviewer,p.institute,p.dept,p.building,p.floor,p.room,p.model,p.dnumber,p.bnumber,p.serial||'',p.leaseEnd||'',p.avgPages,p.epic||0,d.status,decDate,d.notes||'',d.securePrint?'YES':'',rp?.model||'',rp?.dnumber||'',rp?.bnumber||'',rp?.room||'',isConflict?'YES':'',p.manual?'YES':'']);
   });
   const csv=rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));

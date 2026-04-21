@@ -2536,7 +2536,7 @@ function applyBulkImport() {
     var existing = getDecisionsFor(p.id);
     if (existing.length > 0) { skipped++; return; }
     // Write decision
-    var fireKey = p.building.replace(/[.#$\[\]]/g,'_') + '_' + (p.floor||'').replace(/[.#$\[\]]/g,'_');
+    var fireKey = dkey(p.dnumber);
     var dec = {
       status: bulkDec,
       replacementId: null,
@@ -2545,7 +2545,7 @@ function applyBulkImport() {
       reviewer: 'Bulk Import',
       ts: Date.now()
     };
-    writes.push(db.ref('decisions/' + fireKey + '/bulk_' + p.id).set(dec));
+    writes.push(db.ref('decisions/' + fireKey + '/bulk').set(dec));
     matched++;
   });
 

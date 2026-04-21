@@ -287,6 +287,25 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
 .btn-save:disabled{opacity:.25}
 .btn-save:not(:disabled):active{opacity:.8}
 .empty-state{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px}
+.bulk-sheet{background:var(--surface);position:fixed;top:0;left:0;right:0;bottom:0;z-index:300;display:none;flex-direction:column;max-width:580px;margin:0 auto}
+.bulk-sheet.open{display:flex}
+.bulk-hdr{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;flex-shrink:0}
+.bulk-title{font-size:16px;font-weight:700;flex:1}
+.bulk-body{overflow-y:auto;padding:14px 18px 32px;flex:1;display:flex;flex-direction:column;gap:12px}
+.bulk-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+.bulk-textarea{width:100%;padding:10px 12px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface2);font-family:'Sora',sans-serif;font-size:13px;color:var(--text);outline:none;resize:none;-webkit-appearance:none;flex:1;min-height:200px}
+.bulk-textarea:focus{border-color:var(--accent)}
+.bulk-textarea::placeholder{color:var(--text3)}
+.bulk-dec-row{display:flex;gap:8px}
+.bulk-dec-btn{flex:1;padding:10px 6px;border-radius:8px;border:1.5px solid var(--border2);background:transparent;font-family:'Sora',sans-serif;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer}
+.bulk-dec-btn.sel-keep{background:var(--keep-bg);border-color:var(--keep-border);color:var(--keep)}
+.bulk-dec-btn.sel-retire{background:var(--retire-bg);border-color:var(--retire-border);color:var(--retire)}
+.bulk-dec-btn.sel-notfound{background:var(--notfound-bg);border-color:var(--notfound-border);color:var(--notfound)}
+.bulk-apply{width:100%;padding:13px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-family:'Sora',sans-serif;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px}
+.bulk-apply:disabled{opacity:.4;cursor:not-allowed}
+.bulk-err{font-size:12px;color:var(--retire);min-height:16px}
+.bulk-result{font-size:13px;line-height:1.8;padding:12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);display:none}
+
 .back-to-top{position:fixed;bottom:24px;right:16px;z-index:500;width:42px;height:42px;border-radius:50%;background:var(--accent);color:#fff;border:none;font-size:20px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .2s ease;display:flex;align-items:center;justify-content:center}
 .back-to-top.visible{opacity:1;pointer-events:auto}
 .add-printer-sheet{background:var(--surface);border-radius:20px 20px 0 0;border:1px solid var(--border2);border-bottom:none;width:100%;max-width:580px;max-height:90vh;display:flex;flex-direction:column;animation:slideUp .2s cubic-bezier(.22,.68,0,1.2)}
@@ -699,6 +718,42 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-he
   <div class="broadcast-from" id="broadcastFrom">From Erik</div>
   <div class="broadcast-msg" id="broadcastMsg"></div>
   <button class="broadcast-dismiss" onclick="dismissBroadcast()">Tap to dismiss</button>
+</div>
+
+<!-- Bulk Import sheet -->
+<div class="bulk-sheet" id="bulkSheet">
+  <div class="bulk-hdr">
+    <div class="bulk-title">📋 Bulk Import</div>
+    <button class="admin-close" onclick="closeBulkSheet()">Cancel</button>
+  </div>
+  <div class="bulk-body">
+    <div>
+      <div class="bulk-label">Serial Numbers (one per line)</div>
+      <textarea class="bulk-textarea" id="bulkSerials" placeholder="Paste serial numbers here, one per line...&#10;PAAA002825&#10;VNB3N26704&#10;NEQA003036"></textarea>
+    </div>
+    <div>
+      <div class="bulk-label">Decision</div>
+      <div class="bulk-dec-row">
+        <button class="bulk-dec-btn" id="bdKeep"     onclick="setBulkDec('keep')">✓ Keep</button>
+        <button class="bulk-dec-btn" id="bdRetire"   onclick="setBulkDec('retire')">✗ Retire</button>
+        <button class="bulk-dec-btn" id="bdNotFound" onclick="setBulkDec('notfound')">? Not Found</button>
+      </div>
+    </div>
+    <div id="bulkSecureWrap" style="display:none">
+      <div class="bulk-label">Retire Options</div>
+      <div class="secure-row" id="bulkSecureRow" onclick="toggleBulkSecure()" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface2)">
+        <div class="secure-check" id="bulkSecureBox" style="width:20px;height:20px;border-radius:4px;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0"></div>
+        <span style="font-size:13px;color:var(--text)">🔒 Secure Print</span>
+      </div>
+    </div>
+    <div>
+      <div class="bulk-label">Notes (applied to all)</div>
+      <textarea class="bulk-textarea" id="bulkNotes" rows="3" style="min-height:70px" placeholder="Optional note for all printers in this batch..."></textarea>
+    </div>
+    <div class="bulk-err" id="bulkErr"></div>
+    <div class="bulk-result" id="bulkResult"></div>
+    <button class="bulk-apply" id="bulkApplyBtn" onclick="applyBulkImport()" disabled>Apply Bulk Import</button>
+  </div>
 </div>
 
 <!-- Add Printer overlay -->
@@ -2412,6 +2467,102 @@ function launchConfetti(seconds) {
     }
   }
   draw();
+}
+
+// ── BULK IMPORT ───────────────────────────────────────────────────────────────
+var bulkDec = null;
+var bulkSecure = false;
+
+function openBulkSheet() {
+  bulkDec = null; bulkSecure = false;
+  document.getElementById('bulkSerials').value = '';
+  document.getElementById('bulkNotes').value = '';
+  document.getElementById('bulkErr').textContent = '';
+  document.getElementById('bulkResult').style.display = 'none';
+  document.getElementById('bulkResult').textContent = '';
+  document.getElementById('bulkSecureWrap').style.display = 'none';
+  document.getElementById('bulkSecureBox').textContent = '';
+  document.getElementById('bulkApplyBtn').disabled = true;
+  ['bdKeep','bdRetire','bdNotFound'].forEach(function(id){
+    document.getElementById(id).className = 'bulk-dec-btn';
+  });
+  document.getElementById('bulkSheet').classList.add('open');
+}
+
+function closeBulkSheet() {
+  document.getElementById('bulkSheet').classList.remove('open');
+}
+
+function setBulkDec(dec) {
+  bulkDec = dec;
+  document.getElementById('bdKeep').className     = 'bulk-dec-btn' + (dec==='keep'     ? ' sel-keep'     : '');
+  document.getElementById('bdRetire').className   = 'bulk-dec-btn' + (dec==='retire'   ? ' sel-retire'   : '');
+  document.getElementById('bdNotFound').className = 'bulk-dec-btn' + (dec==='notfound' ? ' sel-notfound' : '');
+  document.getElementById('bulkSecureWrap').style.display = dec==='retire' ? 'block' : 'none';
+  if (dec !== 'retire') { bulkSecure = false; document.getElementById('bulkSecureBox').textContent = ''; }
+  document.getElementById('bulkApplyBtn').disabled = false;
+  document.getElementById('bulkErr').textContent = '';
+}
+
+function toggleBulkSecure() {
+  bulkSecure = !bulkSecure;
+  document.getElementById('bulkSecureBox').textContent = bulkSecure ? '✓' : '';
+  document.getElementById('bulkSecureBox').style.borderColor = bulkSecure ? 'var(--accent)' : 'var(--border2)';
+  document.getElementById('bulkSecureBox').style.background  = bulkSecure ? 'var(--accent-dim)' : '';
+}
+
+function applyBulkImport() {
+  var err = document.getElementById('bulkErr');
+  err.textContent = '';
+  if (!bulkDec) { err.textContent = 'Please select a decision.'; return; }
+
+  var raw = document.getElementById('bulkSerials').value;
+  var serials = raw.split(/[\r\n,]+/).map(function(s){ return s.trim().toUpperCase(); }).filter(Boolean);
+  if (!serials.length) { err.textContent = 'Please paste at least one serial number.'; return; }
+
+  var notes = document.getElementById('bulkNotes').value.trim();
+  var btn = document.getElementById('bulkApplyBtn');
+  btn.disabled = true;
+  btn.textContent = 'Applying...';
+
+  var matched = 0, skipped = 0, notFound = 0;
+  var writes = [];
+
+  serials.forEach(function(sn) {
+    var p = printers.find(function(x){ return (x.serial||'').toUpperCase() === sn; });
+    if (!p) { notFound++; return; }
+    // Check if already has a decision
+    var existing = getDecisionsFor(p.id);
+    if (existing.length > 0) { skipped++; return; }
+    // Write decision
+    var fireKey = p.building.replace(/[.#$\[\]]/g,'_') + '_' + (p.floor||'').replace(/[.#$\[\]]/g,'_');
+    var dec = {
+      status: bulkDec,
+      replacementId: null,
+      securePrint: bulkDec==='retire' ? bulkSecure : false,
+      notes: notes || null,
+      reviewer: 'Bulk Import',
+      ts: Date.now()
+    };
+    writes.push(db.ref('decisions/' + fireKey + '/bulk_' + p.id).set(dec));
+    matched++;
+  });
+
+  Promise.all(writes).then(function() {
+    var result = document.getElementById('bulkResult');
+    result.style.display = 'block';
+    result.innerHTML =
+      '✓ <b>' + matched + '</b> decisions applied<br>' +
+      '⏭ <b>' + skipped + '</b> already decided (skipped)<br>' +
+      '❓ <b>' + notFound + '</b> serial numbers not found in list';
+    btn.textContent = 'Apply Bulk Import';
+    btn.disabled = false;
+    document.getElementById('bulkSerials').value = '';
+  }).catch(function(e) {
+    err.textContent = 'Error: ' + e.message;
+    btn.textContent = 'Apply Bulk Import';
+    btn.disabled = false;
+  });
 }
 
 // ── ADD MANUAL PRINTER ─────────────────────────────────────────────────────────
